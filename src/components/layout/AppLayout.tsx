@@ -3,13 +3,14 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, PlusCircle, List, Settings } from "lucide-react";
+import { Home, PlusCircle, List, Settings, Repeat } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { name: "Ana Sayfa", href: "/", icon: Home },
   { name: "Ekle", href: "/add", icon: PlusCircle },
   { name: "İşlemler", href: "/transactions", icon: List },
+  { name: "Abonelikler", href: "/subscriptions", icon: Repeat },
   { name: "Ayarlar", href: "/settings", icon: Settings },
 ];
 

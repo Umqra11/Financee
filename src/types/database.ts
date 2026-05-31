@@ -91,6 +91,7 @@ export interface Database {
           category_id: string | null
           user_id: string
           status: 'active' | 'cancelled'
+          last_processed: string | null
         }
         Insert: {
           id?: string
@@ -102,6 +103,7 @@ export interface Database {
           category_id?: string | null
           user_id: string
           status?: 'active' | 'cancelled'
+          last_processed?: string | null
         }
         Update: {
           id?: string
@@ -113,6 +115,7 @@ export interface Database {
           category_id?: string | null
           user_id?: string
           status?: 'active' | 'cancelled'
+          last_processed?: string | null
         }
         Relationships: [
           {

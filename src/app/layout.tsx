@@ -17,6 +17,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Financee",
   description: "Minimalist Apple-style finance tracker",
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({
