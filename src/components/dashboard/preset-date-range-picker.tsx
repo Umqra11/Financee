@@ -57,11 +57,9 @@ export function PresetDateRangePicker({
       }
     }
     const now = new Date();
-    const y = now.getFullYear();
-    const m = now.getMonth();
     return {
-      from: new Date(y, m, 1),
-      to: new Date(y, m + 1, 0),
+      from: now,
+      to: now,
     }
   })
 
@@ -74,11 +72,9 @@ export function PresetDateRangePicker({
       });
     } else {
       const now = new Date();
-      const y = now.getFullYear();
-      const m = now.getMonth();
       setDate({
-        from: new Date(y, m, 1),
-        to: new Date(y, m + 1, 0),
+        from: now,
+        to: now,
       });
     }
   }, [fromParam, toParam]);

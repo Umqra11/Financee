@@ -16,6 +16,7 @@ const categoryLabels: Record<string, string> = {
   transport: "Ulaşım",
   utilities: "Faturalar",
   entertainment: "Eğlence",
+  loan: "Kredi & Borç",
   other_expense: "Diğer (Gider)",
 };
 

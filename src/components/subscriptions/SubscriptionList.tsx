@@ -27,7 +27,7 @@ type SubscriptionType = {
   id: string;
   name: string;
   amount: number;
-  billing_period: "weekly" | "monthly" | "yearly";
+  frequency: "weekly" | "monthly" | "yearly";
   next_billing_date: string;
   category_id?: string;
   categories?: { name: string };
@@ -47,8 +47,8 @@ export async function SubscriptionList() {
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold tracking-tight">Aktif Abonelikler & Taksitler</h2>
       </div>
-      
-      <div className="hidden md:block border rounded-xl overflow-hidden bg-card">
+
+      <div className="hidden md:block border rounded-xl overflow-x-auto bg-card">
         {/* PC: Table View */}
         <table className="w-full text-sm text-left">
           <thead className="bg-muted/50 text-muted-foreground">
@@ -59,7 +59,7 @@ export async function SubscriptionList() {
               <th className="px-4 py-3 font-medium">Ödeme Yöntemi</th>
               <th className="px-4 py-3 font-medium">Periyot</th>
               <th className="px-4 py-3 font-medium">Sıradaki Ödeme</th>
-              <th className="px-4 py-3 font-medium text-right">İşlem</th>
+              <th className="px-4 py-3 font-medium text-right w-[100px] min-w-[100px] sticky right-0 bg-muted/50 z-10">İşlemler</th>
             </tr>
           </thead>
           <tbody className="divide-y">
@@ -84,14 +84,14 @@ export async function SubscriptionList() {
                     <td className="px-4 py-3 text-muted-foreground text-xs font-medium">
                       {sub.payment_method === 'credit_card' ? '💳 Kredi Kartı' : '💵 Nakit / Banka'}
                     </td>
-                    <td className="px-4 py-3">{frequencyLabels[sub.billing_period]}</td>
+                    <td className="px-4 py-3">{frequencyLabels[sub.frequency]}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <CalendarClock className="w-4 h-4 text-muted-foreground" />
                         {format(new Date(sub.next_billing_date), "dd MMM yyyy", { locale: tr })}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-right whitespace-nowrap w-[100px] min-w-[100px] sticky right-0 bg-card z-10">
                       <div className="flex items-center justify-end gap-2">
                         <EditSubscriptionModal subscription={sub} />
                         <DeleteSubscriptionButton id={sub.id} />
@@ -134,12 +134,12 @@ export async function SubscriptionList() {
                     <DeleteSubscriptionButton id={sub.id} />
                   </div>
                 </div>
-                
+
                 <div className="flex items-center justify-between text-sm mt-2 pt-2 border-t">
                   <div className="flex items-center gap-1.5 text-muted-foreground">
                     <Repeat className="w-4 h-4" />
                     <span>
-                      {frequencyLabels[sub.billing_period]} ({sub.payment_method === 'credit_card' ? 'Kredi Kartı' : 'Nakit'})
+                      {frequencyLabels[sub.frequency]} ({sub.payment_method === 'credit_card' ? 'Kredi Kartı' : 'Nakit'})
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 font-medium">

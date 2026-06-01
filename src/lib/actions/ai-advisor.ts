@@ -66,7 +66,7 @@ export async function getFinancialAdvice(params: { month: number; year: number }
   // 2. Aktif abonelikleri çekelim
   const { data: subscriptions, error: subError } = await supabase
     .from("subscriptions")
-    .select("name, amount, billing_period")
+    .select("name, amount, frequency")
     .eq("user_id", userId)
     .eq("status", "active");
 
@@ -77,9 +77,9 @@ export async function getFinancialAdvice(params: { month: number; year: number }
   const activeSubs = subscriptions || [];
   const totalSubCostMonthly = activeSubs.reduce((sum, sub) => {
     const amt = Number(sub.amount);
-    if (sub.billing_period === "yearly") {
+    if (sub.frequency === "yearly") {
       return sum + amt / 12;
-    } else if (sub.billing_period === "weekly") {
+    } else if (sub.frequency === "weekly") {
       return sum + amt * 4.33; // ortalama 1 aydaki hafta sayısı
     }
     return sum + amt;
@@ -92,7 +92,7 @@ export async function getFinancialAdvice(params: { month: number; year: number }
     totalExpense,
     categoryExpenses,
     activeSubscriptionsCount: activeSubs.length,
-    activeSubscriptionsDetails: activeSubs.map(s => `${s.name} (${s.amount} ₺/${s.billing_period})`),
+    activeSubscriptionsDetails: activeSubs.map(s => `${s.name} (${s.amount} ₺/${s.frequency})`),
     totalMonthlySubscriptionCost: Math.round(totalSubCostMonthly),
   };
 

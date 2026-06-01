@@ -14,7 +14,7 @@ interface Subscription {
   name: string;
   amount: number;
   next_billing_date: string;
-  billing_period: "weekly" | "monthly" | "yearly";
+  frequency: "weekly" | "monthly" | "yearly";
   categories: Category | null;
 }
 

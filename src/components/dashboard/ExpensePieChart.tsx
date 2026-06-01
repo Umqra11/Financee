@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip } from 'recharts';
 
 const COLORS = [
   '#3b82f6', // blue-500
@@ -13,6 +13,18 @@ const COLORS = [
   '#14b8a6', // teal-500
   '#f97316', // orange-500
 ];
+
+const RADIAN = Math.PI / 180;
+const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  return (
+    <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" className="font-bold text-xs">
+      {`%${(percent * 100).toFixed(0)}`}
+    </text>
+  );
+};
 
 export function ExpensePieChart({ data }: { data: { name: string; value: number }[] }) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
@@ -43,18 +55,16 @@ export function ExpensePieChart({ data }: { data: { name: string; value: number 
     return null;
   };
 
-  const renderLegend = (props: any) => {
-    const { payload } = props;
-    if (!payload) return null;
+  const renderLegend = () => {
     return (
-      <ul className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-4 text-xs">
-        {payload.map((entry: any, index: number) => {
-          const percentage = total > 0 ? ((entry.payload.value / total) * 100).toFixed(1) : "0";
-          const color = entry.color;
+      <ul className="flex flex-col gap-y-2.5 text-xs sm:text-sm">
+        {data.map((entry, index) => {
+          const percentage = total > 0 ? ((entry.value / total) * 100).toFixed(1) : "0";
+          const color = COLORS[index % COLORS.length];
           return (
             <li
               key={`legend-item-${index}`}
-              className="flex items-center gap-1.5 cursor-pointer transition-opacity duration-300"
+              className="flex items-center gap-2 cursor-pointer transition-opacity duration-300"
               style={{ opacity: activeIndex === null || activeIndex === index ? 1 : 0.4 }}
               onMouseEnter={() => setActiveIndex(index)}
               onMouseLeave={() => setActiveIndex(null)}
@@ -66,7 +76,7 @@ export function ExpensePieChart({ data }: { data: { name: string; value: number 
                 }}
               />
               <span className="text-zinc-600 dark:text-zinc-300 font-medium transition-opacity duration-300">
-                {entry.value} (%{percentage})
+                {entry.name} (%{percentage})
               </span>
             </li>
           );
@@ -76,16 +86,17 @@ export function ExpensePieChart({ data }: { data: { name: string; value: number 
   };
 
   return (
-    <div className="h-80 w-full p-4 bg-white dark:bg-zinc-950 rounded-2xl border border-zinc-100 dark:border-zinc-800 shadow-sm transition-colors">
-      <ResponsiveContainer width="100%" height="100%">
-        <PieChart>
+    <div className="flex flex-col sm:flex-row items-center gap-6 justify-between p-6 bg-white dark:bg-zinc-950 rounded-2xl border border-zinc-100 dark:border-zinc-800 shadow-sm transition-colors w-full">
+      <div className="w-[280px] h-[280px] shrink-0 flex items-center justify-center mx-auto sm:mx-0">
+        <PieChart width={280} height={280}>
           <Pie 
             data={data} 
-            innerRadius={70} 
-            outerRadius={90} 
-            paddingAngle={5} 
+            innerRadius={0} 
+            outerRadius={110} 
             dataKey="value" 
             stroke="none"
+            labelLine={false}
+            label={renderCustomizedLabel}
             onMouseEnter={(_, index) => setActiveIndex(index)}
             onMouseLeave={() => setActiveIndex(null)}
           >
@@ -94,7 +105,7 @@ export function ExpensePieChart({ data }: { data: { name: string; value: number 
                 key={`cell-${index}`} 
                 fill={COLORS[index % COLORS.length]} 
                 style={{
-                  opacity: activeIndex === null || activeIndex === index ? 1 : 0.3,
+                  opacity: activeIndex === null || activeIndex === index ? 1 : 0.4,
                   transition: "opacity 0.3s ease",
                   cursor: "pointer",
                   outline: 'none'
@@ -103,9 +114,12 @@ export function ExpensePieChart({ data }: { data: { name: string; value: number 
             ))}
           </Pie>
           <Tooltip content={<CustomTooltip />} />
-          <Legend content={renderLegend} />
         </PieChart>
-      </ResponsiveContainer>
+      </div>
+
+      <div className="w-full sm:w-auto flex-1 flex flex-col justify-center pl-0 sm:pl-6">
+        {renderLegend()}
+      </div>
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { getTransactions } from "@/lib/actions/finance";
 import { syncSubscriptionsToTransactions } from "@/lib/actions/sync";
 import { PresetDateRangePicker } from "@/components/dashboard/preset-date-range-picker";
 import { MonthYearDropdown } from "@/components/dashboard/month-year-dropdown";
+import { DatePresets } from "@/components/dashboard/DatePresets";
 import { ExpensePieChart } from "@/components/dashboard/ExpensePieChart";
 import { TrendLineChart } from "@/components/dashboard/TrendLineChart";
 import { ExportButton } from "@/components/subscriptions/ExportButton";
@@ -22,10 +23,13 @@ export default async function Home(props: {
   const now = new Date();
   const y = now.getFullYear();
   const m = now.getMonth() + 1;
+  const d = now.getDate();
   const strM = m < 10 ? `0${m}` : `${m}`;
-  const defaultFrom = `${y}-${strM}-01`;
-  const lastDay = new Date(y, m, 0).getDate();
-  const defaultTo = `${y}-${strM}-${lastDay}`;
+  const strD = d < 10 ? `0${d}` : `${d}`;
+  const todayStr = `${y}-${strM}-${strD}`;
+
+  const defaultFrom = todayStr;
+  const defaultTo = todayStr;
 
   const fromParam = resolvedParams?.from || defaultFrom;
   const toParam = resolvedParams?.to || defaultTo;
@@ -50,6 +54,7 @@ export default async function Home(props: {
       transport: "Ulaşım",
       utilities: "Faturalar",
       entertainment: "Eğlence",
+      loan: "Kredi & Borç",
       other_expense: "Diğer (Gider)",
     };
     
@@ -136,10 +141,11 @@ export default async function Home(props: {
           </div>
           <p className="text-muted-foreground">Mevcut finansal durumunuzun özeti.</p>
         </div>
-        <div className="flex flex-col gap-2 w-[260px] sm:w-[300px]">
+        <div className="flex flex-col gap-2 w-[260px] sm:w-[300px] items-end">
           <React.Suspense fallback={<div className="h-10 w-full bg-muted animate-pulse rounded-md" />}>
             <PresetDateRangePicker className="w-full" />
             <MonthYearDropdown className="w-full" />
+            <DatePresets />
           </React.Suspense>
         </div>
       </div>
@@ -177,7 +183,7 @@ export default async function Home(props: {
         </Card>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 grid-cols-1">
         <Card className="rounded-2xl border shadow-sm bg-card/50 backdrop-blur-md">
           <CardHeader>
             <CardTitle>Kategori Bazlı Harcamalar</CardTitle>

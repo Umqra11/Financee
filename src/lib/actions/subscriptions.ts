@@ -17,7 +17,7 @@ export async function getSubscriptions() {
     .order('next_billing_date', { ascending: true });
 
   if (error) {
-    console.error('Error fetching subscriptions:', error);
+    console.error('Error fetching subscriptions:', JSON.stringify(error, null, 2));
     throw new Error('Abonelikler getirilirken bir hata oluştu.');
   }
 
@@ -66,7 +66,7 @@ export async function addSubscription(params: {
     .insert({
       name: params.name,
       amount: params.amount,
-      billing_period: params.frequency as "monthly" | "yearly" | "weekly",
+      frequency: params.frequency as "monthly" | "yearly" | "weekly",
       category_id: category_id,
       next_billing_date: params.next_payment_date,
       payment_method: params.payment_method || 'cash',
@@ -108,7 +108,7 @@ export async function updateSubscription(params: {
   id: string;
   name: string;
   amount: number;
-  billing_period: string;
+  frequency: string;
   category: string;
   next_billing_date: string;
   payment_method?: 'cash' | 'credit_card';
@@ -147,7 +147,7 @@ export async function updateSubscription(params: {
     .update({
       name: params.name,
       amount: params.amount,
-      billing_period: params.billing_period as "monthly" | "yearly" | "weekly",
+      frequency: params.frequency as "monthly" | "yearly" | "weekly",
       category_id: category_id,
       next_billing_date: params.next_billing_date,
       payment_method: params.payment_method || 'cash',

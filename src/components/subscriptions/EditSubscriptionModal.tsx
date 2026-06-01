@@ -47,7 +47,7 @@ import { toast } from "sonner";
 const formSchema = z.object({
   name: z.string().min(1, "İsim girmelisiniz."),
   amount: z.string().min(1, "Tutar girmelisiniz."),
-  billing_period: z.enum(["weekly", "monthly", "yearly"], {
+  frequency: z.enum(["weekly", "monthly", "yearly"], {
     message: "Periyot seçmelisiniz.",
   }),
   category: z.string().min(1, "Kategori seçmelisiniz."),
@@ -62,7 +62,7 @@ type SubscriptionType = {
   id: string;
   name: string;
   amount: number;
-  billing_period: "weekly" | "monthly" | "yearly";
+  frequency: "weekly" | "monthly" | "yearly";
   next_billing_date: string;
   category_id?: string;
   categories?: { name: string };
@@ -75,12 +75,12 @@ export function EditSubscriptionModal({ subscription }: { subscription: Subscrip
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: subscription.name,
       amount: subscription.amount.toString(),
-      billing_period: subscription.billing_period,
+      frequency: subscription.frequency,
       category: subscription.categories?.name || subscription.category_id || "other_expense",
       next_billing_date: new Date(subscription.next_billing_date),
       payment_method: subscription.payment_method || "cash",
@@ -95,7 +95,7 @@ export function EditSubscriptionModal({ subscription }: { subscription: Subscrip
           id: subscription.id,
           name: values.name,
           amount: Number(values.amount),
-          billing_period: values.billing_period,
+          frequency: values.frequency,
           category: values.category,
           next_billing_date: values.next_billing_date.toISOString(),
           payment_method: values.payment_method,
@@ -118,9 +118,9 @@ export function EditSubscriptionModal({ subscription }: { subscription: Subscrip
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50">
+        <button type="button" className="p-2 text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 transition-colors cursor-pointer rounded-lg hover:bg-neutral-100 dark:hover:bg-zinc-800" title="Düzenle">
           <Pencil className="w-4 h-4" />
-        </Button>
+        </button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
@@ -160,11 +160,11 @@ export function EditSubscriptionModal({ subscription }: { subscription: Subscrip
 
               <FormField
                 control={form.control}
-                name="billing_period"
+                name="frequency"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Periyot</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Seçiniz" />

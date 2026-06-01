@@ -11,8 +11,15 @@ export async function syncSubscriptionsToTransactions() {
     return { success: false, error: 'User not authenticated' }
   }
 
-  const todayDate = new Date()
-  const todayStr = format(todayDate, 'yyyy-MM-dd')
+  // Yerel tarih karşılaştırmalarının gün bazında doğru yapılması ve saat dilimi karmaşasını önlemek için
+  // bugünün tarihini 'Europe/Istanbul' (Türkiye) saat dilimine göre yyyy-MM-dd formatında alıyoruz.
+  const todayStr = new Intl.DateTimeFormat('fr-CA', {
+    timeZone: 'Europe/Istanbul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(new Date())
+  
   // Tarihleri güvenli bir şekilde sayı olarak karşılaştırmak için
   const todayStringNumber = parseInt(todayStr.replace(/-/g, ''))
 
@@ -24,7 +31,7 @@ export async function syncSubscriptionsToTransactions() {
     .lte('next_billing_date', todayStr)
 
   if (fetchError) {
-    console.error('Error fetching subscriptions:', fetchError)
+    console.error('Error fetching subscriptions:', JSON.stringify(fetchError, null, 2))
     return { success: false, error: fetchError.message }
   }
 
@@ -61,7 +68,7 @@ export async function syncSubscriptionsToTransactions() {
       })
 
       // 2. Bir sonraki fatura tarihini hesapla
-      switch (sub.billing_period) {
+      switch (sub.frequency) {
         case 'monthly':
           currentBillingDate = addMonths(currentBillingDate, 1)
           break

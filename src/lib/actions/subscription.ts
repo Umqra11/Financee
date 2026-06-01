@@ -29,7 +29,7 @@ export async function getSubscriptions() {
     .order('next_billing_date', { ascending: true });
 
   if (error) {
-    console.error('Error fetching subscriptions:', error);
+    console.error('Error fetching subscriptions:', JSON.stringify(error, null, 2));
     throw new Error('Abonelikler getirilirken bir hata oluştu.');
   }
 
@@ -150,11 +150,11 @@ export async function processSubscriptions() {
       isUpdated = true;
 
       // 2. Bir sonraki fatura tarihini hesapla
-      if (sub.billing_period === 'monthly') {
+      if (sub.frequency === 'monthly') {
         currentBillingDate.setUTCMonth(currentBillingDate.getUTCMonth() + 1);
-      } else if (sub.billing_period === 'yearly') {
+      } else if (sub.frequency === 'yearly') {
         currentBillingDate.setUTCFullYear(currentBillingDate.getUTCFullYear() + 1);
-      } else if (sub.billing_period === 'weekly') {
+      } else if (sub.frequency === 'weekly') {
         currentBillingDate.setUTCDate(currentBillingDate.getUTCDate() + 7);
       } else {
         break; // Desteklenmeyen bir periyot gelirse döngüyü kır

@@ -89,7 +89,7 @@ export interface Database {
           created_at: string
           name: string
           amount: number
-          billing_period: 'monthly' | 'yearly' | 'weekly'
+          frequency: 'monthly' | 'yearly' | 'weekly'
           next_billing_date: string
           category_id: string | null
           user_id: string
@@ -103,7 +103,7 @@ export interface Database {
           created_at?: string
           name: string
           amount: number
-          billing_period?: 'monthly' | 'yearly' | 'weekly'
+          frequency?: 'monthly' | 'yearly' | 'weekly'
           next_billing_date: string
           category_id?: string | null
           user_id: string
@@ -117,7 +117,7 @@ export interface Database {
           created_at?: string
           name?: string
           amount?: number
-          billing_period?: 'monthly' | 'yearly' | 'weekly'
+          frequency?: 'monthly' | 'yearly' | 'weekly'
           next_billing_date?: string
           category_id?: string | null
           user_id?: string

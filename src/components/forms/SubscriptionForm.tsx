@@ -56,16 +56,16 @@ export function SubscriptionForm() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
       amount: "",
       category: "",
-      frequency: "monthly",
+      frequency: "monthly" as const,
       next_payment_date: new Date(),
-      payment_method: "cash",
-      end_date: undefined,
+      payment_method: "cash" as const,
+      end_date: undefined as Date | undefined,
     },
   });
 
