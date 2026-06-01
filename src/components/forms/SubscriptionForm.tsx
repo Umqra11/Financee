@@ -1,0 +1,274 @@
+"use client";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import { useState } from "react";
+
+import { cn } from "@/lib/utils";
+import { addSubscription } from "@/lib/actions/subscriptions";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useRouter } from "next/navigation";
+
+const formSchema = z.object({
+  name: z.string().min(2, "İsim en az 2 karakter olmalıdır."),
+  amount: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
+    message: "Geçerli bir tutar giriniz.",
+  }),
+  category: z.string().min(1, "Lütfen kategori seçin."),
+  frequency: z.enum(["monthly", "yearly", "weekly"], {
+    required_error: "Lütfen bir periyot seçin.",
+  }),
+  next_payment_date: z.date({
+    required_error: "İlk ödeme tarihi gereklidir.",
+  }),
+  end_date: z.date().optional(),
+});
+
+export function SubscriptionForm() {
+  const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      amount: "",
+      category: "",
+      frequency: "monthly",
+      next_payment_date: new Date(),
+    },
+  });
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      setIsSubmitting(true);
+      await addSubscription({
+        name: values.name,
+        amount: Number(values.amount),
+        frequency: values.frequency,
+        category: values.category,
+        next_payment_date: values.next_payment_date.toISOString(),
+        end_date: values.end_date ? values.end_date.toISOString() : null,
+      });
+      form.reset();
+      router.refresh();
+      alert("Abonelik başarıyla eklendi.");
+    } catch (error) {
+      console.error(error);
+      alert("Hata oluştu.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>İsim / Kurum</FormLabel>
+                <FormControl>
+                  <Input placeholder="Örn: Netflix, Kredi Taksiti" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="amount"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Tutar (₺)</FormLabel>
+                <FormControl>
+                  <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="category"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Kategori</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Kategori seçin">
+                        {{
+                          entertainment: "Eğlence (Netflix, Spotify vb.)",
+                          utilities: "Faturalar (İnternet, Su vb.)",
+                          loan: "Kredi & Borç",
+                          rent: "Kira",
+                          other_expense: "Diğer Düzenli Gider"
+                        }[field.value] || "Kategori seçin"}
+                      </SelectValue>
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="entertainment">Eğlence</SelectItem>
+                    <SelectItem value="utilities">Faturalar</SelectItem>
+                    <SelectItem value="loan">Kredi & Borç</SelectItem>
+                    <SelectItem value="rent">Kira</SelectItem>
+                    <SelectItem value="other_expense">Diğer</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="frequency"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Periyot</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Periyot seçin">
+                        {{
+                          weekly: "Haftalık",
+                          monthly: "Aylık",
+                          yearly: "Yıllık",
+                        }[field.value] || "Periyot seçin"}
+                      </SelectValue>
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="weekly">Haftalık</SelectItem>
+                    <SelectItem value="monthly">Aylık</SelectItem>
+                    <SelectItem value="yearly">Yıllık</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="next_payment_date"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>Sıradaki Ödeme Tarihi</FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full pl-3 text-left font-normal",
+                          !field.value && "text-muted-foreground"
+                        )}
+                      >
+                        {field.value ? (
+                          format(field.value, "PPP")
+                        ) : (
+                          <span>Tarih seçin</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={field.value}
+                      onSelect={field.onChange}
+                      disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="end_date"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>Bitiş Tarihi (Opsiyonel)</FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full pl-3 text-left font-normal",
+                          !field.value && "text-muted-foreground"
+                        )}
+                      >
+                        {field.value ? (
+                          format(field.value, "PPP")
+                        ) : (
+                          <span>Yok (Süresiz)</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={field.value || undefined}
+                      onSelect={field.onChange}
+                      disabled={(date) => date <= new Date()}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <FormDescription>
+                  Kredi taksiti gibi bitecek bir ödemeyse son tarihi seçin.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <Button type="submit" className="w-full mt-4" disabled={isSubmitting}>
+          {isSubmitting ? "Kaydediliyor..." : "Ödemeyi Kaydet"}
+        </Button>
+      </form>
+    </Form>
+  );
+}
