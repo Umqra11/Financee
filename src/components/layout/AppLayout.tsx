@@ -4,12 +4,13 @@ import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
-import { Home, PlusCircle, List, Settings, Repeat } from "lucide-react";
+import { Home, PlusCircle, List, Settings, Repeat, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { OfflineSyncBanner } from "./OfflineSyncBanner";
 
 const navItems = [
   { name: "Ana Sayfa", href: "/", icon: Home },
+  { name: "Dashboard", href: "/dashboard", icon: TrendingUp },
   { name: "Ekle", href: "/add", icon: PlusCircle },
   { name: "İşlemler", href: "/transactions", icon: List },
   { name: "Düzenli Ödemeler", href: "/subscriptions", icon: Repeat },
