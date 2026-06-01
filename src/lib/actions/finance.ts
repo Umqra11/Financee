@@ -30,6 +30,8 @@ export async function getTransactions(params?: {
   month?: number;
   year?: number;
   categoryId?: string;
+  from?: string;
+  to?: string;
 }) {
   const supabase = await createClient();
   const { data: userData, error: userError } = await supabase.auth.getUser();
@@ -44,7 +46,9 @@ export async function getTransactions(params?: {
     .eq('user_id', userData.user.id)
     .order('date', { ascending: false });
 
-  if (params?.month && params?.year) {
+  if (params?.from && params?.to) {
+    query = query.gte('date', params.from).lte('date', params.to);
+  } else if (params?.month && params?.year) {
     const { startStr, endStr } = getMonthDateRange(params.year, params.month);
     query = query.gte('date', startStr).lt('date', endStr);
   }
@@ -109,7 +113,7 @@ export async function getMonthlyExpenseByCategory(params: {
     }
     acc[catId].totalAmount += Number(curr.amount);
     return acc;
-  }, {} as Record<string, { categoryId: string; category: any; totalAmount: number }>);
+  }, {} as Record<string, { categoryId: string; category: Category | null; totalAmount: number }>);
 
   // Array olarak döndürüp, çoktan aza göre sıralıyoruz
   return Object.values(grouped).sort((a, b) => b.totalAmount - a.totalAmount);
@@ -203,6 +207,7 @@ export async function addTransaction(params: {
   category: string;
   date: string;
   note?: string;
+  payment_method?: 'cash' | 'credit_card';
 }) {
   const supabase = await createClient();
   const { data: userData, error: userError } = await supabase.auth.getUser();
@@ -211,14 +216,6 @@ export async function addTransaction(params: {
     throw new Error('Unauthorized');
   }
 
-  // 1. Kategoriyi bul (veya yoksa isminden oluşturmak isteyebiliriz ama şimdilik UUID varsayıyoruz ya da string kullanıyoruz)
-  // Gelen 'category' değeri slug şeklinde (örn 'salary', 'food'). DB'de 'name' ile eşleşeni bulmalıyız.
-  // Ancak db'de category_id uuid. 
-  // O yüzden önce kategoriyi bulacağız. (Eğer yoksa null kalacak, veya önce default categories eklenebilir).
-  
-  // Actually let's just insert without category_id for now if we don't have categories, 
-  // or fetch by name.
-  
   const { data: catData } = await supabase
     .from('categories')
     .select('id')
@@ -227,7 +224,6 @@ export async function addTransaction(params: {
 
   let category_id = catData?.id || null;
 
-  // Kategori yoksa oluştur (Gerçekte user_id ile oluşturmak lazım)
   if (!category_id) {
     const { data: newCat } = await supabase
       .from('categories')
@@ -241,7 +237,7 @@ export async function addTransaction(params: {
     if (newCat) category_id = newCat.id;
   }
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('transactions')
     .insert({
       amount: params.amount,
@@ -249,6 +245,7 @@ export async function addTransaction(params: {
       category_id: category_id,
       date: params.date,
       description: params.note || null,
+      payment_method: params.payment_method || 'cash',
       user_id: userData.user.id
     });
 
@@ -259,3 +256,156 @@ export async function addTransaction(params: {
 
   return { success: true };
 }
+
+export async function deleteTransaction(id: string) {
+  const supabase = await createClient();
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+
+  if (userError || !userData?.user) {
+    throw new Error('Unauthorized');
+  }
+
+  const { error } = await supabase
+    .from('transactions')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', userData.user.id);
+
+  if (error) {
+    console.error('Error deleting transaction:', error);
+    throw new Error('İşlem silinirken hata oluştu.');
+  }
+
+  return { success: true };
+}
+
+export async function editTransaction(id: string, params: {
+  amount: number;
+  type: 'income' | 'expense';
+  category: string;
+  date: string;
+  note?: string;
+  payment_method?: 'cash' | 'credit_card';
+}) {
+  const supabase = await createClient();
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+
+  if (userError || !userData?.user) {
+    throw new Error('Unauthorized');
+  }
+
+  const { data: catData } = await supabase
+    .from('categories')
+    .select('id')
+    .eq('name', params.category)
+    .single();
+
+  let category_id = catData?.id || null;
+
+  if (!category_id) {
+    const { data: newCat } = await supabase
+      .from('categories')
+      .insert({
+        name: params.category,
+        type: params.type,
+        user_id: userData.user.id
+      })
+      .select()
+      .single();
+    if (newCat) category_id = newCat.id;
+  }
+
+  const { error } = await supabase
+    .from('transactions')
+    .update({
+      amount: params.amount,
+      type: params.type,
+      category_id: category_id,
+      date: params.date,
+      description: params.note || null,
+      payment_method: params.payment_method || 'cash',
+    })
+    .eq('id', id)
+    .eq('user_id', userData.user.id);
+
+  if (error) {
+    console.error('Error updating transaction:', error);
+    throw new Error('İşlem güncellenirken hata oluştu.');
+  }
+
+  return { success: true };
+}
+
+/**
+ * Belirli bir kategori için aylık bütçe limitini ekler veya günceller
+ */
+export async function upsertBudgetLimit(params: {
+  categoryId: string;
+  amount: number;
+  month: number;
+  year: number;
+}) {
+  const supabase = await createClient();
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+
+  if (userError || !userData?.user) {
+    throw new Error('Unauthorized');
+  }
+
+  const { startStr, endStr } = getMonthDateRange(params.year, params.month);
+
+  // Bu kategori ve dönem için mevcut bütçeyi bul
+  const { data: existingBudgets, error: fetchError } = await supabase
+    .from('budgets')
+    .select('id')
+    .eq('user_id', userData.user.id)
+    .eq('category_id', params.categoryId)
+    .eq('period', 'monthly')
+    .lt('start_date', endStr)
+    .gte('end_date', startStr)
+    .limit(1);
+
+  if (fetchError) {
+    console.error('Error fetching existing budget:', fetchError);
+    throw new Error('Mevcut bütçe kontrol edilirken hata oluştu.');
+  }
+
+  const existingBudget = existingBudgets?.[0];
+
+  if (existingBudget) {
+    // Güncelle
+    const { error: updateError } = await supabase
+      .from('budgets')
+      .update({
+        amount: params.amount,
+        start_date: startStr,
+        end_date: endStr,
+      })
+      .eq('id', existingBudget.id);
+
+    if (updateError) {
+      console.error('Error updating budget:', updateError);
+      throw new Error('Bütçe güncellenirken hata oluştu.');
+    }
+  } else {
+    // Ekle
+    const { error: insertError } = await supabase
+      .from('budgets')
+      .insert({
+        user_id: userData.user.id,
+        category_id: params.categoryId,
+        amount: params.amount,
+        period: 'monthly',
+        start_date: startStr,
+        end_date: endStr,
+      });
+
+    if (insertError) {
+      console.error('Error inserting budget:', insertError);
+      throw new Error('Bütçe oluşturulurken hata oluştu.');
+    }
+  }
+
+  return { success: true };
+}
+

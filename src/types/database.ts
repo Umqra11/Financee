@@ -49,6 +49,7 @@ export interface Database {
           category_id: string | null
           user_id: string
           type: 'income' | 'expense'
+          payment_method: 'cash' | 'credit_card'
         }
         Insert: {
           id?: string
@@ -59,6 +60,7 @@ export interface Database {
           category_id?: string | null
           user_id: string
           type: 'income' | 'expense'
+          payment_method?: 'cash' | 'credit_card'
         }
         Update: {
           id?: string
@@ -69,6 +71,7 @@ export interface Database {
           category_id?: string | null
           user_id?: string
           type?: 'income' | 'expense'
+          payment_method?: 'cash' | 'credit_card'
         }
         Relationships: [
           {
@@ -92,6 +95,8 @@ export interface Database {
           user_id: string
           status: 'active' | 'cancelled'
           last_processed: string | null
+          payment_method: 'cash' | 'credit_card'
+          end_date: string | null
         }
         Insert: {
           id?: string
@@ -104,6 +109,8 @@ export interface Database {
           user_id: string
           status?: 'active' | 'cancelled'
           last_processed?: string | null
+          payment_method?: 'cash' | 'credit_card'
+          end_date?: string | null
         }
         Update: {
           id?: string
@@ -116,6 +123,8 @@ export interface Database {
           user_id?: string
           status?: 'active' | 'cancelled'
           last_processed?: string | null
+          payment_method?: 'cash' | 'credit_card'
+          end_date?: string | null
         }
         Relationships: [
           {

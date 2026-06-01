@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, PlusCircle, List, Settings, Repeat } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { OfflineSyncBanner } from "./OfflineSyncBanner";
 
 const navItems = [
   { name: "Ana Sayfa", href: "/", icon: Home },
@@ -19,6 +20,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen bg-background">
+      <OfflineSyncBanner />
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-64 border-r bg-card px-4 py-8">
         <div className="mb-10 px-4">

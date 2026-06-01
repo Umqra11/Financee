@@ -129,7 +129,6 @@ export async function processSubscriptions() {
     while (currentBillingDate.toISOString().split('T')[0] <= today) {
       const txDateStr = currentBillingDate.toISOString().split('T')[0];
 
-      // 1. Transaction (İşlem) tablosuna ekle
       const { error: txError } = await supabase
         .from('transactions')
         .insert({
@@ -138,7 +137,8 @@ export async function processSubscriptions() {
           description: `${sub.name} Aboneliği`,
           category_id: sub.category_id,
           user_id: sub.user_id,
-          type: 'expense'
+          type: 'expense',
+          payment_method: sub.payment_method || 'cash'
         });
 
       if (txError) {

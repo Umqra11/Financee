@@ -5,6 +5,8 @@ import { tr } from "date-fns/locale";
 
 import { cn } from "@/lib/utils";
 import { getTransactions } from "@/lib/actions/finance";
+import { DeleteTransactionButton } from "./DeleteTransactionButton";
+import { EditTransactionModal } from "./EditTransactionModal";
 
 const categoryLabels: Record<string, string> = {
   salary: "Maaş",
@@ -17,10 +19,10 @@ const categoryLabels: Record<string, string> = {
   other_expense: "Diğer (Gider)",
 };
 
-export async function TransactionList() {
-  let transactions = [];
+export async function TransactionList({ from, to }: { from?: string; to?: string } = {}) {
+  let transactions: any[] = [];
   try {
-    transactions = await getTransactions();
+    transactions = await getTransactions({ from, to });
   } catch (error) {
     // User might not be logged in or error occurred
     console.error(error);
@@ -74,17 +76,23 @@ export async function TransactionList() {
                     </div>
                   </div>
                 </div>
-                <div
-                  className={cn(
-                    "font-semibold",
-                    tx.type === "income" ? "text-green-600 dark:text-green-500" : ""
-                  )}
-                >
-                  {tx.type === "income" ? "+" : "-"}
-                  {Number(tx.amount).toLocaleString("tr-TR", {
-                    style: "currency",
-                    currency: "TRY",
-                  })}
+                <div className="flex items-center gap-3">
+                  <div
+                    className={cn(
+                      "font-semibold",
+                      tx.type === "income" ? "text-green-600 dark:text-green-500" : "text-red-600 dark:text-red-500"
+                    )}
+                  >
+                    {tx.type === "income" ? "+" : "-"}
+                    {Number(tx.amount).toLocaleString("tr-TR", {
+                      style: "currency",
+                      currency: "TRY",
+                    })}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <EditTransactionModal transaction={tx} />
+                    <DeleteTransactionButton id={tx.id} />
+                  </div>
                 </div>
               </div>
             );

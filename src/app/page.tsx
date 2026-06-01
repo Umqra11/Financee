@@ -1,20 +1,117 @@
+export const dynamic = "force-dynamic";
+import React from "react";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowUpCircle, ArrowDownCircle, Wallet } from "lucide-react";
 import { getTransactions } from "@/lib/actions/finance";
+import { syncSubscriptionsToTransactions } from "@/lib/actions/sync";
+import { PresetDateRangePicker } from "@/components/dashboard/preset-date-range-picker";
+import { MonthYearDropdown } from "@/components/dashboard/month-year-dropdown";
+import { ExpensePieChart } from "@/components/dashboard/ExpensePieChart";
+import { TrendLineChart } from "@/components/dashboard/TrendLineChart";
+import { ExportButton } from "@/components/subscriptions/ExportButton";
+import { subMonths } from "date-fns";
 
-export default async function Home() {
+export default async function Home(props: {
+  searchParams: Promise<{ from?: string; to?: string }>;
+}) {
+  const resolvedParams = await props.searchParams;
   let totalIncome = 0;
   let totalExpense = 0;
+
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth() + 1;
+  const strM = m < 10 ? `0${m}` : `${m}`;
+  const defaultFrom = `${y}-${strM}-01`;
+  const lastDay = new Date(y, m, 0).getDate();
+  const defaultTo = `${y}-${strM}-${lastDay}`;
+
+  const fromParam = resolvedParams?.from || defaultFrom;
+  const toParam = resolvedParams?.to || defaultTo;
   
+  let pieChartData: { name: string; value: number }[] = [];
+  let trendChartData: { date: string; displayDate: string; amount: number }[] = [];
+
+  let transactions: any[] = [];
   try {
-    const transactions = await getTransactions();
+    await syncSubscriptionsToTransactions();
+    // İşlemleri tarihe göre getir
+    transactions = await getTransactions({
+      from: fromParam,
+      to: toParam,
+    });
+    
+    const categoryLabels: Record<string, string> = {
+      salary: "Maaş",
+      investment: "Yatırım",
+      other_income: "Diğer (Gelir)",
+      food: "Gıda",
+      transport: "Ulaşım",
+      utilities: "Faturalar",
+      entertainment: "Eğlence",
+      other_expense: "Diğer (Gider)",
+    };
+    
+    const categoryMap = new Map<string, { name: string; value: number }>();
+
     transactions.forEach((tx: any) => {
       const amount = Number(tx.amount);
       if (tx.type === "income") {
         totalIncome += amount;
       } else if (tx.type === "expense") {
-        totalExpense += amount;
+        if (tx.payment_method !== "credit_card") {
+          totalExpense += amount;
+        }
+
+        const rawCat = tx.categories?.name || 'Kategorisiz';
+        const categoryName = categoryLabels[rawCat] || rawCat;
+        
+        const existing = categoryMap.get(categoryName);
+        if (existing) {
+          existing.value += amount;
+        } else {
+          categoryMap.set(categoryName, { name: categoryName, value: amount });
+        }
       }
+    });
+
+    pieChartData = Array.from(categoryMap.values()).sort((a, b) => b.value - a.value);
+
+    // Trend grafiği için veriyi hazırlama
+    const start = new Date(fromParam);
+    const end = new Date(toParam);
+    const dateList: string[] = [];
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      dateList.push(`${y}-${m}-${day}`);
+    }
+
+    let cumulative = 0;
+    trendChartData = dateList.map((dateStr) => {
+      const dayTx = transactions.filter((tx: any) => tx.date.split('T')[0] === dateStr);
+      let dayNet = 0;
+      dayTx.forEach((tx: any) => {
+        const amt = Number(tx.amount);
+        if (tx.type === 'income') {
+          dayNet += amt;
+        } else if (tx.type === 'expense' && tx.payment_method !== 'credit_card') {
+          dayNet -= amt;
+        }
+      });
+      cumulative += dayNet;
+      
+      const d = new Date(dateStr);
+      const displayDate = d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' });
+      const axisDate = d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
+      
+      return {
+        date: axisDate,
+        displayDate,
+        amount: cumulative,
+      };
     });
   } catch (error) {
     console.error(error);
@@ -31,21 +128,32 @@ export default async function Home() {
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">Mevcut finansal durumunuzun özeti.</p>
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold tracking-tight">Kontrol Paneli</h1>
+            <ExportButton data={transactions} />
+          </div>
+          <p className="text-muted-foreground">Mevcut finansal durumunuzun özeti.</p>
+        </div>
+        <div className="flex flex-col gap-2 w-[260px] sm:w-[300px]">
+          <React.Suspense fallback={<div className="h-10 w-full bg-muted animate-pulse rounded-md" />}>
+            <PresetDateRangePicker className="w-full" />
+            <MonthYearDropdown className="w-full" />
+          </React.Suspense>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">Toplam Bakiye</CardTitle>
+            <CardTitle className="text-sm font-medium">Net Bakiye (Seçili Tarih)</CardTitle>
             <Wallet className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(balance)}</div>
             <p className="text-xs text-muted-foreground">
-              Tüm zamanların toplam bakiyesi
+              Seçilen periyottaki toplam gelir - gider
             </p>
           </CardContent>
         </Card>
@@ -60,7 +168,7 @@ export default async function Home() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">Toplam Gider</CardTitle>
+            <CardTitle className="text-sm font-medium">Toplam Gider (Nakit)</CardTitle>
             <ArrowDownCircle className="w-4 h-4 text-red-500" />
           </CardHeader>
           <CardContent>
@@ -69,17 +177,33 @@ export default async function Home() {
         </Card>
       </div>
 
-      <section>
-        <Card>
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card className="rounded-2xl border shadow-sm bg-card/50 backdrop-blur-md">
           <CardHeader>
-            <CardTitle>Gelir Gider Grafiği</CardTitle>
-            <CardDescription>Aylık harcama trendiniz (Çok yakında!)</CardDescription>
+            <CardTitle>Kategori Bazlı Harcamalar</CardTitle>
+            <CardDescription>Seçili periyotta harcama dağılımınız</CardDescription>
           </CardHeader>
-          <CardContent className="h-[200px] flex items-center justify-center bg-accent/20 rounded-md">
-            <p className="text-sm text-muted-foreground">Grafik Yükleniyor...</p>
+          <CardContent className="flex items-center justify-center p-6 min-h-[320px]">
+            {pieChartData.length > 0 ? (
+              <ExpensePieChart data={pieChartData} />
+            ) : (
+              <div className="h-40 flex items-center justify-center text-sm text-muted-foreground">
+                Bu periyotta harcama verisi bulunmuyor.
+              </div>
+            )}
           </CardContent>
         </Card>
-      </section>
+
+        <Card className="rounded-2xl border shadow-sm bg-card/50 backdrop-blur-md">
+          <CardHeader>
+            <CardTitle>Finansal Trend</CardTitle>
+            <CardDescription>Seçili periyotta net bakiye gidişatınız (Kümülatif)</CardDescription>
+          </CardHeader>
+          <CardContent className="p-6 flex items-center justify-center min-h-[320px]">
+            <TrendLineChart data={trendChartData} />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

@@ -3,14 +3,20 @@ import { getMonthlyExpenseByCategory, checkBudgetLimit } from "@/lib/actions/fin
 import { ExpensePieChart } from "@/components/dashboard/ExpensePieChart";
 import { BudgetProgressBar } from "@/components/dashboard/BudgetProgressBar";
 import { DashboardDatePicker } from "@/components/dashboard/DashboardDatePicker";
+import { AiFinancialAdvisor } from "@/components/dashboard/AiFinancialAdvisor";
+import { getUpcomingSubscriptions } from "@/lib/actions/subscriptions";
+import { UpcomingPaymentsBanner } from "@/components/dashboard/UpcomingPaymentsBanner";
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ month?: string; year?: string }> }) {
   const params = await searchParams;
   const currentMonth = params.month ? parseInt(params.month) : new Date().getMonth() + 1;
   const currentYear = params.year ? parseInt(params.year) : new Date().getFullYear();
 
-  // Harcamaları getir
-  const expensesByCategory = await getMonthlyExpenseByCategory({ month: currentMonth, year: currentYear });
+  // Harcamaları getir ve yaklaşan abonelikleri paralel olarak çek
+  const [expensesByCategory, upcomingSubs] = await Promise.all([
+    getMonthlyExpenseByCategory({ month: currentMonth, year: currentYear }),
+    getUpcomingSubscriptions()
+  ]);
 
   // Her kategori için bütçe limitlerini kontrol et
   const categoriesWithBudgets = await Promise.all(
@@ -37,13 +43,18 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   return (
     <div className="flex flex-col gap-6 p-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Finansal Özet</h1>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">Aylık harcamalarınızı ve bütçe durumunuzu takip edin.</p>
         </div>
-        <DashboardDatePicker initialMonth={currentMonth} initialYear={currentYear} />
+        <div className="flex flex-wrap items-center gap-3">
+          <AiFinancialAdvisor month={currentMonth} year={currentYear} />
+          <DashboardDatePicker initialMonth={currentMonth} initialYear={currentYear} />
+        </div>
       </div>
+
+      <UpcomingPaymentsBanner subscriptions={upcomingSubs} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Sol Kolon: Pasta Grafik */}
@@ -72,17 +83,13 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                     {item.category?.icon && <span>{item.category.icon}</span>}
                     <span className="font-medium text-sm">{item.category?.name || 'Kategorisiz'}</span>
                   </div>
-                  {item.budget.hasBudget ? (
-                    <BudgetProgressBar 
-                      spent={item.budget.expenseAmount} 
-                      limit={item.budget.budgetAmount} 
-                    />
-                  ) : (
-                    <div className="flex justify-between items-center text-sm text-zinc-500">
-                      <span>Kullanılan: ₺{item.totalAmount}</span>
-                      <span className="text-xs bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded-md">Limit belirlenmedi</span>
-                    </div>
-                  )}
+                  <BudgetProgressBar 
+                    spent={item.totalAmount} 
+                    initialLimit={item.budget.hasBudget ? item.budget.budgetAmount : 0} 
+                    categoryId={item.categoryId}
+                    month={currentMonth}
+                    year={currentYear}
+                  />
                 </div>
               ))}
             </div>

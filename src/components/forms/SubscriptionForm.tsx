@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { format } from "date-fns";
+import { tr } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 import { useState } from "react";
 
@@ -42,11 +43,12 @@ const formSchema = z.object({
   }),
   category: z.string().min(1, "Lütfen kategori seçin."),
   frequency: z.enum(["monthly", "yearly", "weekly"], {
-    required_error: "Lütfen bir periyot seçin.",
+    message: "Lütfen bir periyot seçin.",
   }),
   next_payment_date: z.date({
-    required_error: "İlk ödeme tarihi gereklidir.",
+    message: "İlk ödeme tarihi gereklidir.",
   }),
+  payment_method: z.enum(["cash", "credit_card"]),
   end_date: z.date().optional(),
 });
 
@@ -62,6 +64,8 @@ export function SubscriptionForm() {
       category: "",
       frequency: "monthly",
       next_payment_date: new Date(),
+      payment_method: "cash",
+      end_date: undefined,
     },
   });
 
@@ -74,6 +78,7 @@ export function SubscriptionForm() {
         frequency: values.frequency,
         category: values.category,
         next_payment_date: values.next_payment_date.toISOString(),
+        payment_method: values.payment_method,
         end_date: values.end_date ? values.end_date.toISOString() : null,
       });
       form.reset();
@@ -188,7 +193,7 @@ export function SubscriptionForm() {
               <FormItem className="flex flex-col">
                 <FormLabel>Sıradaki Ödeme Tarihi</FormLabel>
                 <Popover>
-                  <PopoverTrigger asChild>
+                  <PopoverTrigger render={
                     <FormControl>
                       <Button
                         variant={"outline"}
@@ -198,21 +203,21 @@ export function SubscriptionForm() {
                         )}
                       >
                         {field.value ? (
-                          format(field.value, "PPP")
+                          format(field.value, "PPP", { locale: tr })
                         ) : (
                           <span>Tarih seçin</span>
                         )}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
                     </FormControl>
-                  </PopoverTrigger>
+                  } />
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
                       selected={field.value}
                       onSelect={field.onChange}
                       disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                      initialFocus
+                      autoFocus
                     />
                   </PopoverContent>
                 </Popover>
@@ -228,7 +233,7 @@ export function SubscriptionForm() {
               <FormItem className="flex flex-col">
                 <FormLabel>Bitiş Tarihi (Opsiyonel)</FormLabel>
                 <Popover>
-                  <PopoverTrigger asChild>
+                  <PopoverTrigger render={
                     <FormControl>
                       <Button
                         variant={"outline"}
@@ -238,31 +243,59 @@ export function SubscriptionForm() {
                         )}
                       >
                         {field.value ? (
-                          format(field.value, "PPP")
+                          format(field.value, "dd MMM yyyy", { locale: tr })
                         ) : (
                           <span>Yok (Süresiz)</span>
                         )}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
                     </FormControl>
-                  </PopoverTrigger>
+                  } />
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
                       selected={field.value || undefined}
                       onSelect={field.onChange}
                       disabled={(date) => date <= new Date()}
-                      initialFocus
+                      autoFocus
                     />
                   </PopoverContent>
                 </Popover>
-                <FormDescription>
+                <FormDescription className="text-xs text-muted-foreground">
                   Kredi taksiti gibi bitecek bir ödemeyse son tarihi seçin.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
+
+          <FormField
+            control={form.control}
+            name="payment_method"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Ödeme Şekli</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Ödeme şekli seçin">
+                        {field.value === 'credit_card' ? 'Kredi Kartı' : 'Nakit / Banka Kartı'}
+                      </SelectValue>
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="cash">Nakit / Banka Kartı</SelectItem>
+                    <SelectItem value="credit_card">Kredi Kartı</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormDescription className="text-xs text-muted-foreground">
+                  Kredi kartı harcamaları "Toplam Gider" tutarına yansımaz, böylece kart ekstresini ödediğinizde duplikasyon oluşmaz.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
         </div>
 
         <Button type="submit" className="w-full mt-4" disabled={isSubmitting}>

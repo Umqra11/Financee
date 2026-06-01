@@ -3,7 +3,17 @@
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export function ExportButton({ data }: { data: any[] }) {
+type SubscriptionType = {
+  name: string;
+  amount: number;
+  frequency: string;
+  next_payment_date: string;
+  end_date?: string | null;
+  category_id?: string;
+  categories?: { name: string };
+};
+
+export function ExportButton({ data }: { data: SubscriptionType[] }) {
   const handleExport = () => {
     if (!data || data.length === 0) return;
 

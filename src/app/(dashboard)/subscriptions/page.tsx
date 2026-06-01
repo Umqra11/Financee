@@ -1,3 +1,6 @@
+
+export const dynamic = "force-dynamic";
+
 import { SubscriptionList } from "@/components/subscriptions/SubscriptionList";
 import { SubscriptionForm } from "@/components/forms/SubscriptionForm";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
