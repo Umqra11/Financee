@@ -117,7 +117,7 @@ export function SubscriptionForm() {
               <FormItem>
                 <FormLabel>Tutar (₺)</FormLabel>
                 <FormControl>
-                  <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                  <Input type="number" step="0.01" inputMode="decimal" placeholder="0.00" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -192,35 +192,46 @@ export function SubscriptionForm() {
             render={({ field }) => (
               <FormItem className="flex flex-col">
                 <FormLabel>Sıradaki Ödeme Tarihi</FormLabel>
-                <Popover>
-                  <PopoverTrigger render={
-                    <FormControl>
-                      <Button
-                        variant={"outline"}
-                        className={cn(
-                          "w-full pl-3 text-left font-normal",
-                          !field.value && "text-muted-foreground"
-                        )}
-                      >
-                        {field.value ? (
-                          format(field.value, "PPP", { locale: tr })
-                        ) : (
-                          <span>Tarih seçin</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  } />
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value}
-                      onSelect={field.onChange}
-                      disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                      autoFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+                <div className="flex gap-2">
+                  <Popover>
+                    <PopoverTrigger render={
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "flex-1 pl-3 text-left font-normal h-10",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, "d MMM yyyy", { locale: tr })
+                          ) : (
+                            <span>Tarih seçin</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    } />
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                        autoFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <Input
+                    type="date"
+                    className="w-auto min-w-[140px] h-10"
+                    value={field.value ? format(field.value, "yyyy-MM-dd") : ""}
+                    onChange={(e) => {
+                      const d = new Date(e.target.value);
+                      if (!isNaN(d.getTime())) field.onChange(d);
+                    }}
+                  />
+                </div>
                 <FormMessage />
               </FormItem>
             )}
@@ -232,35 +243,46 @@ export function SubscriptionForm() {
             render={({ field }) => (
               <FormItem className="flex flex-col">
                 <FormLabel>Bitiş Tarihi (Opsiyonel)</FormLabel>
-                <Popover>
-                  <PopoverTrigger render={
-                    <FormControl>
-                      <Button
-                        variant={"outline"}
-                        className={cn(
-                          "w-full pl-3 text-left font-normal",
-                          !field.value && "text-muted-foreground"
-                        )}
-                      >
-                        {field.value ? (
-                          format(field.value, "dd MMM yyyy", { locale: tr })
-                        ) : (
-                          <span>Yok (Süresiz)</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  } />
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value || undefined}
-                      onSelect={field.onChange}
-                      disabled={(date) => date <= new Date()}
-                      autoFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+                <div className="flex gap-2">
+                  <Popover>
+                    <PopoverTrigger render={
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "flex-1 pl-3 text-left font-normal h-10",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, "d MMM yyyy", { locale: tr })
+                          ) : (
+                            <span>Yok (Süresiz)</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    } />
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value || undefined}
+                        onSelect={field.onChange}
+                        disabled={(date) => date <= new Date()}
+                        autoFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <Input
+                    type="date"
+                    className="w-auto min-w-[140px] h-10"
+                    value={field.value ? format(field.value, "yyyy-MM-dd") : ""}
+                    onChange={(e) => {
+                      const d = new Date(e.target.value);
+                      if (!isNaN(d.getTime())) field.onChange(d);
+                    }}
+                  />
+                </div>
                 <FormDescription className="text-xs text-muted-foreground">
                   Kredi taksiti gibi bitecek bir ödemeyse son tarihi seçin.
                 </FormDescription>

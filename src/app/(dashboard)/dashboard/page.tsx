@@ -1,7 +1,8 @@
 import { Suspense } from "react";
-import { getMonthlyExpenseByCategory, checkBudgetLimit } from "@/lib/actions/finance";
+import { getMonthlyExpenseByCategory, checkBudgetLimit, getOrCreateGeneralBudget } from "@/lib/actions/finance";
 import { ExpensePieChart } from "@/components/dashboard/ExpensePieChart";
 import { BudgetProgressBar } from "@/components/dashboard/BudgetProgressBar";
+import { GeneralBudgetBar } from "@/components/dashboard/GeneralBudgetBar";
 import { DashboardDatePicker } from "@/components/dashboard/DashboardDatePicker";
 import { AiFinancialAdvisor } from "@/components/dashboard/AiFinancialAdvisor";
 import { getUpcomingSubscriptions } from "@/lib/actions/subscriptions";
@@ -12,9 +13,10 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const currentMonth = params.month ? parseInt(params.month) : new Date().getMonth() + 1;
   const currentYear = params.year ? parseInt(params.year) : new Date().getFullYear();
 
-  // Harcamaları getir ve yaklaşan abonelikleri paralel olarak çek
-  const [expensesByCategory, upcomingSubs] = await Promise.all([
+  // Harcamaları, bütçeyi ve yaklaşan abonelikleri paralel olarak çek
+  const [expensesByCategory, generalBudget, upcomingSubs] = await Promise.all([
     getMonthlyExpenseByCategory({ month: currentMonth, year: currentYear }),
+    getOrCreateGeneralBudget({ month: currentMonth, year: currentYear }),
     getUpcomingSubscriptions()
   ]);
 
@@ -57,12 +59,25 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       <UpcomingPaymentsBanner subscriptions={upcomingSubs} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Sol Kolon: Pasta Grafik */}
+        {/* Sol Kolon: Toplam Harcama + Bütçe Barı + Pasta Grafik */}
         <div className="flex flex-col gap-4">
           <div className="bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-100 dark:border-zinc-800 shadow-sm flex flex-col items-center justify-center">
             <h2 className="text-lg font-medium mb-2">Toplam Harcama</h2>
             <p className="text-3xl font-bold">₺{totalExpense.toLocaleString('tr-TR')}</p>
           </div>
+
+          {/* Genel Aylık Bütçe Bar'ı */}
+          <GeneralBudgetBar
+            totalSpent={generalBudget.totalSpent}
+            budgetAmount={generalBudget.budgetAmount}
+            hasBudget={generalBudget.hasBudget}
+            percentage={generalBudget.percentage}
+            isOverBudget={generalBudget.isOverBudget}
+            isNearLimit={generalBudget.isNearLimit}
+            month={currentMonth}
+            year={currentYear}
+          />
+
           {pieChartData.length > 0 ? (
             <ExpensePieChart data={pieChartData} />
           ) : (
@@ -83,9 +98,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                     {item.category?.icon && <span>{item.category.icon}</span>}
                     <span className="font-medium text-sm">{item.category?.name || 'Kategorisiz'}</span>
                   </div>
-                  <BudgetProgressBar 
-                    spent={item.totalAmount} 
-                    initialLimit={item.budget.hasBudget ? item.budget.budgetAmount : 0} 
+                  <BudgetProgressBar
+                    spent={item.totalAmount}
+                    initialLimit={item.budget.hasBudget ? item.budget.budgetAmount : 0}
                     categoryId={item.categoryId}
                     month={currentMonth}
                     year={currentYear}

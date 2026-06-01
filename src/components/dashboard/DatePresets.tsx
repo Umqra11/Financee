@@ -12,7 +12,7 @@ const formatLocalDate = (d: Date) => {
   return `${year}-${month < 10 ? '0' + month : month}-${day < 10 ? '0' + day : day}`;
 };
 
-export function DatePresets() {
+export function DatePresets({ basePath = "/" }: { basePath?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -24,7 +24,7 @@ export function DatePresets() {
     if (!fromParam || !toParam) return "today"; // Varsayılan olarak Bugün
 
     const todayStr = formatLocalDate(new Date());
-    
+
     // Bugün
     if (fromParam === todayStr && toParam === todayStr) return "today";
 
@@ -87,7 +87,7 @@ export function DatePresets() {
     params.set("from", fromStr);
     params.set("to", toStr);
 
-    router.push(`/?${params.toString()}`);
+    router.push(`${basePath}?${params.toString()}`);
   };
 
   const presets = [

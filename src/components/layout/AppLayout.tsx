@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
 import { Home, PlusCircle, List, Settings, Repeat } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -17,6 +18,7 @@ const navItems = [
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
 
   return (
     <div className="flex h-screen bg-background">
@@ -35,8 +37,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.name}
                 href={item.href}
+                prefetch={true}
+                scroll={false}
                 className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-xl transition-colors",
+                  "flex items-center gap-3 px-4 py-3 rounded-xl transition-colors duration-150",
                   isActive
                     ? "bg-primary text-primary-foreground font-medium"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -62,7 +66,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t bg-background/80 backdrop-blur-xl pb-safe">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t bg-background/95 backdrop-blur-none pb-safe will-change-transform">
         <div className="flex items-center justify-around px-2 py-3">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
@@ -70,8 +74,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.name}
                 href={item.href}
+                prefetch={true}
+                scroll={false}
                 className={cn(
-                  "flex flex-col items-center gap-1 p-2 rounded-lg min-w-[64px] transition-colors",
+                  "flex flex-col items-center gap-1 p-2 rounded-lg min-w-[64px] transition-colors duration-150 active:scale-95",
                   isActive
                     ? "text-primary"
                     : "text-muted-foreground hover:text-foreground"

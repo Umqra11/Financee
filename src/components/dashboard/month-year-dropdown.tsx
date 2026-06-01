@@ -18,7 +18,7 @@ const MONTHS = [
 
 const YEARS = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i);
 
-export function MonthYearDropdown({ className }: React.HTMLAttributes<HTMLDivElement>) {
+export function MonthYearDropdown({ className, basePath = "/" }: React.HTMLAttributes<HTMLDivElement> & { basePath?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -37,7 +37,7 @@ export function MonthYearDropdown({ className }: React.HTMLAttributes<HTMLDivEle
         const fromMonth = parseInt(fromParts[1], 10) - 1;
         const fromYear = parseInt(fromParts[0], 10);
         const fromDay = parseInt(fromParts[2], 10);
-        
+
         const toMonth = parseInt(toParts[1], 10) - 1;
         const toYear = parseInt(toParts[0], 10);
         // We consider it a month-view if it starts on day 1, and month/year matches
@@ -57,7 +57,7 @@ export function MonthYearDropdown({ className }: React.HTMLAttributes<HTMLDivEle
     const m = parseInt(newMonth) + 1;
     const strMonth = m < 10 ? `0${m}` : `${m}`;
     const fromStr = `${newYear}-${strMonth}-01`;
-    
+
     // get last day
     const lastDay = new Date(parseInt(newYear), m, 0).getDate();
     const toStr = `${newYear}-${strMonth}-${lastDay}`;
@@ -66,12 +66,12 @@ export function MonthYearDropdown({ className }: React.HTMLAttributes<HTMLDivEle
     params.set("from", fromStr);
     params.set("to", toStr);
 
-    router.push(`/?${params.toString()}`);
+    router.push(`${basePath}?${params.toString()}`);
   };
 
   return (
     <div className={cn("flex items-center gap-2 w-full", className)}>
-      <Select value={month} onValueChange={(val) => { if(val) handleUpdate(val, year); }}>
+      <Select value={month} onValueChange={(val) => { if (val) handleUpdate(val, year); }}>
         <SelectTrigger className="flex-1 rounded-xl bg-white border-neutral-200">
           <SelectValue placeholder="Ay">{MONTHS[parseInt(month)]}</SelectValue>
         </SelectTrigger>
@@ -84,7 +84,7 @@ export function MonthYearDropdown({ className }: React.HTMLAttributes<HTMLDivEle
         </SelectContent>
       </Select>
 
-      <Select value={year} onValueChange={(val) => { if(val) handleUpdate(month, val); }}>
+      <Select value={year} onValueChange={(val) => { if (val) handleUpdate(month, val); }}>
         <SelectTrigger className="flex-1 rounded-xl bg-white border-neutral-200">
           <SelectValue placeholder="Yıl">{year}</SelectValue>
         </SelectTrigger>

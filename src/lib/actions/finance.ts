@@ -16,7 +16,7 @@ function getMonthDateRange(year: number, month: number) {
   // month is 1-indexed (1 = January)
   const startDate = new Date(Date.UTC(year, month - 1, 1));
   const endDate = new Date(Date.UTC(year, month, 1)); // first day of next month
-  
+
   // Format as YYYY-MM-DD
   const startStr = startDate.toISOString().split('T')[0];
   const endStr = endDate.toISOString().split('T')[0];
@@ -101,8 +101,8 @@ export async function getMonthlyExpenseByCategory(params: {
     const catId = curr.category_id || 'uncategorized';
     if (!acc[catId]) {
       // categories field may be returned as single object or array depending on relation, usually object for many-to-one
-      const categoryData = Array.isArray(curr.categories) 
-        ? curr.categories[0] 
+      const categoryData = Array.isArray(curr.categories)
+        ? curr.categories[0]
         : curr.categories;
 
       acc[catId] = {
@@ -182,9 +182,9 @@ export async function checkBudgetLimit(params: {
 
   const expenseAmount = expenses.reduce((sum, t) => sum + Number(t.amount), 0);
   const budgetAmount = Number(budget.amount);
-  
-  const percentage = budgetAmount > 0 
-    ? (expenseAmount / budgetAmount) * 100 
+
+  const percentage = budgetAmount > 0
+    ? (expenseAmount / budgetAmount) * 100
     : 0;
 
   // Uyarı flag'leri (%80 uyarı, %100 tehlike)
@@ -252,6 +252,151 @@ export async function addTransaction(params: {
   if (error) {
     console.error('Error adding transaction:', error);
     throw new Error('İşlem eklenirken hata oluştu.');
+  }
+
+  return { success: true };
+}
+
+/**
+ * Genel aylık bütçeyi (category_id = null) getirir, yoksa kayıt oluşturur.
+ * Kullanıcı dashboard'da toplam bütçe bar'ı için kullanılır.
+ */
+export async function getOrCreateGeneralBudget(params: {
+  month: number;
+  year: number;
+}) {
+  const supabase = await createClient();
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+
+  if (userError || !userData?.user) {
+    throw new Error('Unauthorized');
+  }
+
+  const { startStr, endStr } = getMonthDateRange(params.year, params.month);
+
+  // Mevcut genel bütçeyi ara (category_id IS NULL)
+  const { data: budgets, error: budgetError } = await supabase
+    .from('budgets')
+    .select('*')
+    .eq('user_id', userData.user.id)
+    .is('category_id', null)
+    .eq('period', 'monthly')
+    .lt('start_date', endStr)
+    .gte('end_date', startStr)
+    .limit(1);
+
+  if (budgetError) {
+    console.error('Error fetching general budget:', budgetError);
+    throw new Error('Genel bütçe getirilirken hata oluştu.');
+  }
+
+  const budget = budgets?.[0];
+
+  // Aynı ayın toplam harcamalarını getir
+  const { data: expenses, error: expenseError } = await supabase
+    .from('transactions')
+    .select('amount')
+    .eq('user_id', userData.user.id)
+    .eq('type', 'expense')
+    .gte('date', startStr)
+    .lt('date', endStr);
+
+  if (expenseError) {
+    console.error('Error fetching expenses for general budget:', expenseError);
+    // Hata durumunda boş array ile devam et, sayfa çökmesin
+    const totalSpent = 0;
+    const budgetAmount = budget ? Number(budget.amount) : 0;
+    return {
+      hasBudget: !!budget,
+      budgetId: budget?.id || null,
+      budgetAmount,
+      totalSpent,
+      percentage: 0,
+      isOverBudget: false,
+      isNearLimit: false,
+    };
+  }
+
+  const totalSpent = (expenses || []).reduce((sum, t) => sum + Number(t.amount || 0), 0);
+  const budgetAmount = budget ? Number(budget.amount) : 0;
+  const percentage = budgetAmount > 0 ? (totalSpent / budgetAmount) * 100 : 0;
+
+  return {
+    hasBudget: !!budget,
+    budgetId: budget?.id || null,
+    budgetAmount,
+    totalSpent,
+    percentage: Math.min(Math.round(percentage * 100) / 100, 100),
+    isOverBudget: percentage >= 100,
+    isNearLimit: percentage >= 80 && percentage < 100,
+  };
+}
+
+/**
+ * Genel aylık bütçeyi ekler veya günceller (category_id = null)
+ */
+export async function upsertGeneralBudget(params: {
+  amount: number;
+  month: number;
+  year: number;
+}) {
+  const supabase = await createClient();
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+
+  if (userError || !userData?.user) {
+    throw new Error('Unauthorized');
+  }
+
+  const { startStr, endStr } = getMonthDateRange(params.year, params.month);
+
+  // Mevcut bütçeyi ara
+  const { data: existingBudgets, error: fetchError } = await supabase
+    .from('budgets')
+    .select('id')
+    .eq('user_id', userData.user.id)
+    .is('category_id', null)
+    .eq('period', 'monthly')
+    .lt('start_date', endStr)
+    .gte('end_date', startStr)
+    .limit(1);
+
+  if (fetchError) {
+    console.error('Error fetching existing general budget:', fetchError);
+    throw new Error('Bütçe kontrol edilirken hata oluştu.');
+  }
+
+  const existingBudget = existingBudgets?.[0];
+
+  if (existingBudget) {
+    const { error: updateError } = await supabase
+      .from('budgets')
+      .update({
+        amount: params.amount,
+        start_date: startStr,
+        end_date: endStr,
+      })
+      .eq('id', existingBudget.id);
+
+    if (updateError) {
+      console.error('Error updating general budget:', updateError);
+      throw new Error('Bütçe güncellenirken hata oluştu.');
+    }
+  } else {
+    const { error: insertError } = await supabase
+      .from('budgets')
+      .insert({
+        user_id: userData.user.id,
+        category_id: null,
+        amount: params.amount,
+        period: 'monthly',
+        start_date: startStr,
+        end_date: endStr,
+      });
+
+    if (insertError) {
+      console.error('Error inserting general budget:', insertError);
+      throw new Error('Bütçe oluşturulurken hata oluştu.');
+    }
   }
 
   return { success: true };
