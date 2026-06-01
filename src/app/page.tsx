@@ -3,7 +3,7 @@ import React from "react";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowUpCircle, ArrowDownCircle, Wallet } from "lucide-react";
-import { getTransactions } from "@/lib/actions/finance";
+import { getTransactions, getTotalBalance, getOrCreateGeneralBudget } from "@/lib/actions/finance";
 import { syncSubscriptionsToTransactions } from "@/lib/actions/sync";
 import { PresetDateRangePicker } from "@/components/dashboard/preset-date-range-picker";
 import { MonthYearDropdown } from "@/components/dashboard/month-year-dropdown";
@@ -12,14 +12,12 @@ import { ExpensePieChart } from "@/components/dashboard/ExpensePieChart";
 import { TrendLineChart } from "@/components/dashboard/TrendLineChart";
 import { ExportButton } from "@/components/subscriptions/ExportButton";
 import { subMonths } from "date-fns";
+import { cn } from "@/lib/utils";
 
 export default async function Home(props: {
   searchParams: Promise<{ from?: string; to?: string }>;
 }) {
   const resolvedParams = await props.searchParams;
-  let totalIncome = 0;
-  let totalExpense = 0;
-
   const now = new Date();
   const y = now.getFullYear();
   const m = now.getMonth() + 1;
@@ -33,7 +31,26 @@ export default async function Home(props: {
 
   const fromParam = resolvedParams?.from || defaultFrom;
   const toParam = resolvedParams?.to || defaultTo;
-  
+
+  // Tüm zamanlar bakiyesi (sabit)
+  let totalBalanceData = { balance: 0, totalIncome: 0, totalExpense: 0 };
+  try {
+    totalBalanceData = await getTotalBalance();
+  } catch (error) {
+    console.error("Error fetching total balance:", error);
+  }
+
+  // Bu ay bütçesi
+  let generalBudget = { hasBudget: false, budgetAmount: 0, totalSpent: 0, percentage: 0, isOverBudget: false, isNearLimit: false };
+  try {
+    generalBudget = await getOrCreateGeneralBudget({ month: m, year: y });
+  } catch (error) {
+    console.error("Error fetching general budget:", error);
+  }
+
+  let totalIncome = 0;
+  let totalExpense = 0;
+
   let pieChartData: { name: string; value: number }[] = [];
   let trendChartData: { date: string; displayDate: string; amount: number }[] = [];
 
@@ -45,7 +62,7 @@ export default async function Home(props: {
       from: fromParam,
       to: toParam,
     });
-    
+
     const categoryLabels: Record<string, string> = {
       salary: "Maaş",
       investment: "Yatırım",
@@ -57,7 +74,7 @@ export default async function Home(props: {
       loan: "Kredi & Borç",
       other_expense: "Diğer (Gider)",
     };
-    
+
     const categoryMap = new Map<string, { name: string; value: number }>();
 
     transactions.forEach((tx: any) => {
@@ -71,7 +88,7 @@ export default async function Home(props: {
 
         const rawCat = tx.categories?.name || 'Kategorisiz';
         const categoryName = categoryLabels[rawCat] || rawCat;
-        
+
         const existing = categoryMap.get(categoryName);
         if (existing) {
           existing.value += amount;
@@ -107,11 +124,11 @@ export default async function Home(props: {
         }
       });
       cumulative += dayNet;
-      
+
       const d = new Date(dateStr);
       const displayDate = d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' });
       const axisDate = d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
-      
+
       return {
         date: axisDate,
         displayDate,
@@ -122,13 +139,15 @@ export default async function Home(props: {
     console.error(error);
   }
 
-  const balance = totalIncome - totalExpense;
-
   const formatCurrency = (amount: number) => {
     return amount.toLocaleString("tr-TR", {
       style: "currency",
       currency: "TRY",
     });
+  };
+
+  const formatPlain = (amount: number) => {
+    return "₺" + amount.toLocaleString("tr-TR");
   };
 
   return (
@@ -150,16 +169,18 @@ export default async function Home(props: {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card className={totalBalanceData.balance >= 0 ? "border-l-4 border-l-green-500" : "border-l-4 border-l-red-500"}>
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">Net Bakiye (Seçili Tarih)</CardTitle>
+            <CardTitle className="text-sm font-medium">Hesap Bakiyesi</CardTitle>
             <Wallet className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(balance)}</div>
+            <div className={`text-2xl font-bold ${totalBalanceData.balance >= 0 ? "text-green-600" : "text-red-600"}`}>
+              {formatCurrency(totalBalanceData.balance)}
+            </div>
             <p className="text-xs text-muted-foreground">
-              Seçilen periyottaki toplam gelir - gider
+              Tüm zamanlar toplam gelir - gider
             </p>
           </CardContent>
         </Card>
@@ -179,6 +200,74 @@ export default async function Home(props: {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">-{formatCurrency(totalExpense)}</div>
+          </CardContent>
+        </Card>
+
+        {/* Aylık Bütçe Kutusu - renkli */}
+        <Card className={cn(
+          "border-l-4 transition-colors duration-300",
+          !generalBudget.hasBudget
+            ? "border-l-zinc-300 bg-zinc-50 dark:bg-zinc-900/50"
+            : generalBudget.isOverBudget
+              ? "border-l-red-500 bg-red-50 dark:bg-red-950/30"
+              : generalBudget.isNearLimit
+                ? "border-l-amber-500 bg-amber-50 dark:bg-amber-950/30"
+                : generalBudget.percentage <= 60
+                  ? "border-l-emerald-500 bg-emerald-50 dark:bg-emerald-950/30"
+                  : "border-l-yellow-500 bg-yellow-50 dark:bg-yellow-950/30"
+        )}>
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-sm font-medium">Aylık Bütçe</CardTitle>
+            <span className={cn(
+              "text-xs font-semibold px-2 py-0.5 rounded-full",
+              !generalBudget.hasBudget
+                ? "bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
+                : generalBudget.isOverBudget
+                  ? "bg-red-200 text-red-700 dark:bg-red-900/40 dark:text-red-400"
+                  : generalBudget.isNearLimit
+                    ? "bg-amber-200 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
+                    : "bg-emerald-200 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"
+            )}>
+              {!generalBudget.hasBudget
+                ? "Bütçe Yok"
+                : generalBudget.isOverBudget
+                  ? "Aşıldı!"
+                  : generalBudget.isNearLimit
+                    ? "Dikkat"
+                    : "%" + Math.round(generalBudget.percentage)}
+            </span>
+          </CardHeader>
+          <CardContent>
+            {!generalBudget.hasBudget ? (
+              <div className="space-y-2">
+                <div className="text-xl font-bold text-zinc-500">—</div>
+                <p className="text-xs text-zinc-400">
+                  <a href="/dashboard" className="underline hover:text-indigo-500">Dashboard'dan</a> aylık bütçe belirleyin
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                <div className="flex justify-between items-baseline">
+                  <span className="text-xs text-zinc-500">Harcanan</span>
+                  <span className="text-sm font-semibold">{formatPlain(generalBudget.totalSpent)}</span>
+                </div>
+                <div className="flex justify-between items-baseline">
+                  <span className="text-xs text-zinc-500">Bütçe</span>
+                  <span className="text-sm font-semibold">{formatPlain(generalBudget.budgetAmount)}</span>
+                </div>
+                <div className="flex justify-between items-baseline pt-1 border-t border-zinc-200 dark:border-zinc-700">
+                  <span className="text-xs text-zinc-500">
+                    {generalBudget.isOverBudget ? "Aşım" : "Kalan"}
+                  </span>
+                  <span className={cn(
+                    "text-sm font-bold",
+                    generalBudget.isOverBudget ? "text-red-600" : "text-emerald-600"
+                  )}>
+                    {generalBudget.isOverBudget ? "-" : ""}{formatPlain(Math.abs(generalBudget.budgetAmount - generalBudget.totalSpent))}
+                  </span>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -402,6 +402,47 @@ export async function upsertGeneralBudget(params: {
   return { success: true };
 }
 
+/**
+ * Tüm zamanlar için toplam gelir ve gideri getirir (tarih filtresiz)
+ * Hesap bakiyesi için kullanılır
+ */
+export async function getTotalBalance() {
+  const supabase = await createClient();
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+
+  if (userError || !userData?.user) {
+    throw new Error('Unauthorized');
+  }
+
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('amount, type, payment_method')
+    .eq('user_id', userData.user.id);
+
+  if (error) {
+    console.error('Error fetching total balance:', error);
+    return { totalIncome: 0, totalExpense: 0, balance: 0 };
+  }
+
+  let totalIncome = 0;
+  let totalExpense = 0;
+
+  (data || []).forEach((tx) => {
+    const amount = Number(tx.amount || 0);
+    if (tx.type === 'income') {
+      totalIncome += amount;
+    } else if (tx.type === 'expense' && tx.payment_method !== 'credit_card') {
+      totalExpense += amount;
+    }
+  });
+
+  return {
+    totalIncome,
+    totalExpense,
+    balance: totalIncome - totalExpense,
+  };
+}
+
 export async function deleteTransaction(id: string) {
   const supabase = await createClient();
   const { data: userData, error: userError } = await supabase.auth.getUser();
