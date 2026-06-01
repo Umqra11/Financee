@@ -8,7 +8,7 @@ import { tr } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Form,
@@ -37,11 +37,11 @@ import { Textarea } from "@/components/ui/textarea";
 const formSchema = z.object({
   amount: z.string().min(1, { message: "Tutar girmelisiniz." }),
   type: z.enum(["income", "expense"], {
-    required_error: "Lütfen bir tür seçin.",
+    message: "Lütfen bir tür seçin.",
   }),
   category: z.string().min(1, { message: "Kategori seçmelisiniz." }),
   date: z.date({
-    required_error: "Tarih seçmelisiniz.",
+    message: "Tarih seçmelisiniz.",
   }),
   note: z.string().optional(),
 });
@@ -145,24 +145,22 @@ export function QuickEntryForm() {
             <FormItem className="flex flex-col">
               <FormLabel>Tarih</FormLabel>
               <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full pl-3 text-left font-normal",
-                        !field.value && "text-muted-foreground"
-                      )}
-                    >
-                      {field.value ? (
-                        format(field.value, "PPP", { locale: tr })
-                      ) : (
-                        <span>Tarih seçin</span>
-                      )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
+                <FormControl>
+                  <PopoverTrigger
+                    className={cn(
+                      buttonVariants({ variant: "outline" }),
+                      "w-full pl-3 text-left font-normal",
+                      !field.value && "text-muted-foreground"
+                    )}
+                  >
+                    {field.value ? (
+                      format(field.value, "PPP", { locale: tr })
+                    ) : (
+                      <span>Tarih seçin</span>
+                    )}
+                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                  </PopoverTrigger>
+                </FormControl>
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
@@ -171,7 +169,6 @@ export function QuickEntryForm() {
                     disabled={(date) =>
                       date > new Date() || date < new Date("1900-01-01")
                     }
-                    initialFocus
                   />
                 </PopoverContent>
               </Popover>
