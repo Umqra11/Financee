@@ -10,7 +10,7 @@ const navItems = [
   { name: "Ana Sayfa", href: "/", icon: Home },
   { name: "Ekle", href: "/add", icon: PlusCircle },
   { name: "İşlemler", href: "/transactions", icon: List },
-  { name: "Abonelikler", href: "/subscriptions", icon: Repeat },
+  { name: "Düzenli Ödemeler", href: "/subscriptions", icon: Repeat },
   { name: "Ayarlar", href: "/settings", icon: Settings },
 ];
 

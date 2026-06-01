@@ -54,6 +54,7 @@ export function QuickEntryForm() {
       type: "expense",
       category: "",
       note: "",
+      date: new Date(),
     },
   });
 
@@ -72,7 +73,7 @@ export function QuickEntryForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Tür</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Tür seçin" />
@@ -109,7 +110,7 @@ export function QuickEntryForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Kategori</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Kategori seçin" />
