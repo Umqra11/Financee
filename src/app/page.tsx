@@ -1,7 +1,34 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowUpCircle, ArrowDownCircle, Wallet } from "lucide-react";
+import { getTransactions } from "@/lib/actions/finance";
 
-export default function Home() {
+export default async function Home() {
+  let totalIncome = 0;
+  let totalExpense = 0;
+  
+  try {
+    const transactions = await getTransactions();
+    transactions.forEach((tx: any) => {
+      const amount = Number(tx.amount);
+      if (tx.type === "income") {
+        totalIncome += amount;
+      } else if (tx.type === "expense") {
+        totalExpense += amount;
+      }
+    });
+  } catch (error) {
+    console.error(error);
+  }
+
+  const balance = totalIncome - totalExpense;
+
+  const formatCurrency = (amount: number) => {
+    return amount.toLocaleString("tr-TR", {
+      style: "currency",
+      currency: "TRY",
+    });
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col gap-2">
@@ -16,28 +43,28 @@ export default function Home() {
             <Wallet className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₺0.00</div>
+            <div className="text-2xl font-bold">{formatCurrency(balance)}</div>
             <p className="text-xs text-muted-foreground">
-              Geçen aya göre +0%
+              Tüm zamanların toplam bakiyesi
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">Aylık Gelir</CardTitle>
+            <CardTitle className="text-sm font-medium">Toplam Gelir</CardTitle>
             <ArrowUpCircle className="w-4 h-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">₺0.00</div>
+            <div className="text-2xl font-bold text-green-600">+{formatCurrency(totalIncome)}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">Aylık Gider</CardTitle>
+            <CardTitle className="text-sm font-medium">Toplam Gider</CardTitle>
             <ArrowDownCircle className="w-4 h-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">₺0.00</div>
+            <div className="text-2xl font-bold text-red-600">-{formatCurrency(totalExpense)}</div>
           </CardContent>
         </Card>
       </div>

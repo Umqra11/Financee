@@ -8,6 +8,7 @@ import { tr } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { addTransaction } from "@/lib/actions/finance";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -58,9 +59,21 @@ export function QuickEntryForm() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-    // Backend developer will handle the form submission logic here.
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      await addTransaction({
+        amount: Number(values.amount),
+        type: values.type,
+        category: values.category,
+        date: values.date.toISOString(),
+        note: values.note,
+      });
+      form.reset();
+      // Yönlendirme ya da başarılı mesajı eklenebilir.
+    } catch (error) {
+      console.error(error);
+      alert("Hata oluştu.");
+    }
   }
 
   return (
@@ -76,7 +89,9 @@ export function QuickEntryForm() {
                 <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Tür seçin" />
+                      <SelectValue placeholder="Tür seçin">
+                        {field.value === 'income' ? 'Gelir' : field.value === 'expense' ? 'Gider' : 'Tür seçin'}
+                      </SelectValue>
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -113,7 +128,18 @@ export function QuickEntryForm() {
               <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Kategori seçin" />
+                    <SelectValue placeholder="Kategori seçin">
+                      {{
+                        salary: "Maaş",
+                        investment: "Yatırım",
+                        other_income: "Diğer",
+                        food: "Gıda",
+                        transport: "Ulaşım",
+                        utilities: "Faturalar",
+                        entertainment: "Eğlence",
+                        other_expense: "Diğer"
+                      }[field.value] || "Kategori seçin"}
+                    </SelectValue>
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>

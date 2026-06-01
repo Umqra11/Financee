@@ -196,3 +196,66 @@ export async function checkBudgetLimit(params: {
     isDanger,
   };
 }
+
+export async function addTransaction(params: {
+  amount: number;
+  type: 'income' | 'expense';
+  category: string;
+  date: string;
+  note?: string;
+}) {
+  const supabase = await createClient();
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+
+  if (userError || !userData?.user) {
+    throw new Error('Unauthorized');
+  }
+
+  // 1. Kategoriyi bul (veya yoksa isminden oluşturmak isteyebiliriz ama şimdilik UUID varsayıyoruz ya da string kullanıyoruz)
+  // Gelen 'category' değeri slug şeklinde (örn 'salary', 'food'). DB'de 'name' ile eşleşeni bulmalıyız.
+  // Ancak db'de category_id uuid. 
+  // O yüzden önce kategoriyi bulacağız. (Eğer yoksa null kalacak, veya önce default categories eklenebilir).
+  
+  // Actually let's just insert without category_id for now if we don't have categories, 
+  // or fetch by name.
+  
+  const { data: catData } = await supabase
+    .from('categories')
+    .select('id')
+    .eq('name', params.category)
+    .single();
+
+  let category_id = catData?.id || null;
+
+  // Kategori yoksa oluştur (Gerçekte user_id ile oluşturmak lazım)
+  if (!category_id) {
+    const { data: newCat } = await supabase
+      .from('categories')
+      .insert({
+        name: params.category,
+        type: params.type,
+        user_id: userData.user.id
+      })
+      .select()
+      .single();
+    if (newCat) category_id = newCat.id;
+  }
+
+  const { data, error } = await supabase
+    .from('transactions')
+    .insert({
+      amount: params.amount,
+      type: params.type,
+      category_id: category_id,
+      date: params.date,
+      description: params.note || null,
+      user_id: userData.user.id
+    });
+
+  if (error) {
+    console.error('Error adding transaction:', error);
+    throw new Error('İşlem eklenirken hata oluştu.');
+  }
+
+  return { success: true };
+}
