@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
-import { Home, Plus, List, Settings, Repeat, PiggyBank } from "lucide-react";
+import { Home, Plus, List, Settings, Repeat } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { OfflineSyncBanner } from "./OfflineSyncBanner";
 import ControlCenter from "./ControlCenter";
@@ -13,7 +13,6 @@ const navItems = [
   { name: "Ana Sayfa", href: "/", icon: Home },
   { name: "İşlemler", href: "/transactions", icon: List },
   { name: "Ekle", href: "/add", icon: Plus, featured: true },
-  { name: "Bütçe", href: "/budget", icon: PiggyBank },
   { name: "Düzenli Ödemeler", href: "/subscriptions", icon: Repeat },
   { name: "Ayarlar", href: "/settings", icon: Settings },
 ];
@@ -97,7 +96,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
         <div className="max-w-5xl mx-auto p-4 md:p-8">
           {/* Header (Mobile) */}
-          <header className="md:hidden flex items-center justify-between mb-6 pt-2">
+          <header className="md:hidden flex items-center gap-3 mb-6 pt-2">
+            {/* Logo */}
+            <svg viewBox="0 0 28 28" className="w-8 h-8 shrink-0">
+              <circle cx="14" cy="14" r="14" fill="#111827" />
+              <polygon points="14,6 6,21 22,21" fill="white" />
+            </svg>
             <h1 className="text-xl font-bold text-primary">Financee</h1>
           </header>
           {children}

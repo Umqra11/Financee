@@ -146,12 +146,6 @@ export default async function Home(props: {
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-zinc-900 shadow-md">
-              <svg viewBox="0 0 28 28" className="w-6 h-6">
-                <circle cx="14" cy="14" r="14" fill="#111827" />
-                <polygon points="14,6 6,21 22,21" fill="white" />
-              </svg>
-            </div>
             <h1 className="text-3xl font-bold tracking-tight">Kontrol Paneli</h1>
             <ExportButton data={transactions} />
           </div>
