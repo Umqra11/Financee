@@ -4,10 +4,15 @@ import { createClient } from "@/lib/supabase/server";
 
 const apiKey = process.env.DEEPSEEK_API_KEY;
 
-const openai = new OpenAI({
-    baseURL: "https://api.deepseek.com",
-    apiKey: apiKey || "",
-});
+function getOpenAIClient() {
+    if (!apiKey) {
+        throw new Error("DEEPSEEK_API_KEY environment variable is not set");
+    }
+    return new OpenAI({
+        baseURL: "https://api.deepseek.com",
+        apiKey: apiKey,
+    });
+}
 
 interface ChatMessage {
     role: "user" | "assistant";
@@ -146,6 +151,7 @@ export async function POST(req: NextRequest) {
     const recentMessages = messages.slice(-10);
 
     try {
+        const openai = getOpenAIClient();
         const financialContext = await getFinancialContext(
             userData.user.id
         );
