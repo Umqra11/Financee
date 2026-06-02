@@ -9,15 +9,17 @@ import { DeleteTransactionButton } from "./DeleteTransactionButton";
 import { EditTransactionModal } from "./EditTransactionModal";
 
 const categoryLabels: Record<string, string> = {
-  salary: "Maaş",
-  investment: "Yatırım",
-  other_income: "Diğer (Gelir)",
-  food: "Gıda",
-  transport: "Ulaşım",
-  utilities: "Faturalar",
-  entertainment: "Eğlence",
-  loan: "Kredi & Borç",
-  other_expense: "Diğer (Gider)",
+  maaş: "Maaş",
+  diğer_gelir: "Diğer Gelir",
+  gıda: "Gıda",
+  ulaşım: "Ulaşım",
+  faturalar: "Faturalar",
+  eğlence: "Eğlence",
+  kredi: "Kredi & Borç",
+  diğer_gider: "Diğer Gider",
+  yatırım: "Yatırım",
+  kredi_kartı_ödemesi: "Kredi Kartı Ödemesi",
+  market: "Market",
 };
 
 export async function TransactionList({ from, to }: { from?: string; to?: string } = {}) {

@@ -164,37 +164,4 @@ export async function updateSubscription(params: {
   return { success: true };
 }
 
-/**
- * Önümüzdeki 3 gün içinde günü gelecek aktif abonelikleri getirir
- */
-export async function getUpcomingSubscriptions() {
-  const supabase = await createClient();
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-
-  if (userError || !userData?.user) {
-    throw new Error('Unauthorized');
-  }
-
-  const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
-
-  const threeDaysLater = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
-  const threeDaysLaterStr = threeDaysLater.toISOString().split('T')[0];
-
-  const { data, error } = await supabase
-    .from('subscriptions')
-    .select('*, categories(*)')
-    .eq('user_id', userData.user.id)
-    .eq('status', 'active')
-    .gte('next_billing_date', todayStr)
-    .lte('next_billing_date', threeDaysLaterStr)
-    .order('next_billing_date', { ascending: true });
-
-  if (error) {
-    console.error('Error fetching upcoming subscriptions:', error);
-    throw new Error('Yaklaşan abonelikler getirilirken bir hata oluştu.');
-  }
-
-  return data;
-}
 

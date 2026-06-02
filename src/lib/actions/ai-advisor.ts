@@ -1,15 +1,52 @@
 "use server";
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import OpenAI from "openai";
 import { createClient } from "@/lib/supabase/server";
 
-const apiKey = process.env.GEMINI_API_KEY;
-const genAI = new GoogleGenerativeAI(apiKey || "");
+const apiKey = process.env.DEEPSEEK_API_KEY;
+
+const openai = new OpenAI({
+  baseURL: "https://api.deepseek.com",
+  apiKey: apiKey || "",
+});
 
 interface SavingTip {
   title: string;
   impact: "Düşük" | "Orta" | "Yüksek";
   description: string;
+}
+
+/**
+ * Exponential backoff ile retry yapan yardımcı fonksiyon.
+ * 429 (rate limit) durumunda 3 defaya kadar artan bekleme süreleriyle tekrar dener.
+ */
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  initialDelayMs: number = 1000
+): Promise<T> {
+  let lastError: any;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      lastError = error;
+      const status = error?.status ?? error?.code;
+
+      // Sadece 429 (rate limit) için retry yap
+      if (status === 429 && attempt < maxRetries) {
+        const delay = initialDelayMs * Math.pow(2, attempt); // 1s, 2s, 4s
+        console.warn(
+          `[DeepSeek] Rate limit (429) hit. Retrying in ${delay}ms... (attempt ${attempt + 1}/${maxRetries})`
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        continue;
+      }
+
+      throw error; // Diğer hataları hemen fırlat
+    }
+  }
+  throw lastError;
 }
 
 export async function getFinancialAdvice(params: { month: number; year: number }) {
@@ -56,8 +93,8 @@ export async function getFinancialAdvice(params: { month: number; year: number }
       totalIncome += amount;
     } else {
       totalExpense += amount;
-      const catName = tx.categories && !Array.isArray(tx.categories) 
-        ? tx.categories.name 
+      const catName = tx.categories && !Array.isArray(tx.categories)
+        ? tx.categories.name
         : "Kategorisiz";
       categoryExpenses[catName] = (categoryExpenses[catName] || 0) + amount;
     }
@@ -97,10 +134,9 @@ export async function getFinancialAdvice(params: { month: number; year: number }
   };
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+    const systemPrompt = `Sen kişisel finans yönetiminde uzman, son derece zeki ve profesyonel bir finansal danışman (AI Financial Advisor) yapay zekasısın.`;
 
-    const prompt = `
-Sen kişisel finans yönetiminde uzman, son derece zeki ve profesyonel bir finansal danışman (AI Financial Advisor) yapay zekasısın.
+    const userPrompt = `
 Kullanıcının ${financialSummary.period} dönemine ait finansal verileri aşağıdadır:
 
 - Toplam Gelir: ${financialSummary.totalIncome} ₺
@@ -133,19 +169,65 @@ JSON Şablonu:
     "impact": "Düşük",
     "description": "<Açıklama>"
   }
-]
-    `;
+]`;
 
-    const result = await model.generateContent(prompt);
-    const responseText = result.response.text();
-    
+    // Exponential backoff ile retry mekanizması kullan
+    const completion = await withRetry(async () => {
+      return await openai.chat.completions.create({
+        model: "deepseek-v4-flash",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        stream: false,
+      });
+    }, 3, 1000);
+
+    const responseText = completion.choices?.[0]?.message?.content || "";
+
+    // Token kullanımını çıkar
+    const usage = completion.usage ?? null;
+
     // JSON parse işlemi (Eğer AI markdown block ile sararsa temizle)
     const cleanedText = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
     const parsedAdvice = JSON.parse(cleanedText) as SavingTip[];
 
-    return { success: true, advice: parsedAdvice };
+    return {
+      success: true,
+      advice: parsedAdvice,
+      _usage: usage
+        ? {
+          promptTokens: usage.prompt_tokens ?? 0,
+          completionTokens: usage.completion_tokens ?? 0,
+          totalTokens: usage.total_tokens ?? 0,
+        }
+        : null,
+    };
   } catch (error: any) {
     console.error("AI Advisor Error:", error);
+
+    const status = error?.status ?? error?.code;
+
+    // 429 rate limit - retry sonrası hala başarısız
+    if (status === 429) {
+      throw new Error(
+        "Şu an sunucuda yoğunluk yaşanmaktadır. Lütfen kısa bir süre sonra tekrar deneyiniz."
+      );
+    }
+
+    // DeepSeek API hataları
+    if (status === 401) {
+      throw new Error("API anahtarı geçersiz. Lütfen yöneticinizle iletişime geçin.");
+    }
+
+    if (status === 402) {
+      throw new Error("Hesap bakiyesi yetersiz. Lütfen hesabınıza bakiye yükleyin.");
+    }
+
+    if (status === 503) {
+      throw new Error("Servis şu anda kullanılamıyor. Lütfen kısa bir süre sonra tekrar deneyiniz.");
+    }
+
     throw new Error(error.message || "Finansal tavsiyeler üretilirken bir hata oluştu.");
   }
 }

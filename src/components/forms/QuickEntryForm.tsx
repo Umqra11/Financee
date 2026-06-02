@@ -11,6 +11,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { addTransaction } from "@/lib/actions/finance";
 import { ReceiptScannerButton } from "./ReceiptScannerButton";
+import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -50,8 +51,22 @@ const formSchema = z.object({
   payment_method: z.enum(["cash", "credit_card"]).optional(),
 });
 
+const categoryLabels: Record<string, string> = {
+  maaş: "Maaş",
+  diğer_gelir: "Diğer Gelir",
+  gıda: "Gıda",
+  ulaşım: "Ulaşım",
+  faturalar: "Faturalar",
+  eğlence: "Eğlence",
+  kredi: "Kredi & Borç",
+  diğer_gider: "Diğer Gider",
+  yatırım: "Yatırım",
+  kredi_kartı_ödemesi: "Kredi Kartı Ödemesi",
+  market: "Market",
+};
+
 export function QuickEntryForm() {
-  const [successMsg, setSuccessMsg] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -73,12 +88,14 @@ export function QuickEntryForm() {
 
   const formatLocalDate = (date: Date) => {
     const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
     return `${y}-${m}-${d}`;
   };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       await addTransaction({
         amount: Number(values.amount),
@@ -96,11 +113,12 @@ export function QuickEntryForm() {
         date: new Date(),
         payment_method: "cash",
       });
-      setSuccessMsg(true);
-      setTimeout(() => setSuccessMsg(false), 3000);
+      toast.success("Başarıyla kaydedildi.");
     } catch (error) {
       console.error(error);
-      alert("Hata oluştu.");
+      toast.error("Bir hata oluştu. Lütfen tekrar deneyiniz.");
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -115,11 +133,19 @@ export function QuickEntryForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Tür</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Tür seçin">
-                          {field.value === 'income' ? 'Gelir' : field.value === 'expense' ? 'Gider' : 'Tür seçin'}
+                          {field.value === "income"
+                            ? "Gelir"
+                            : field.value === "expense"
+                              ? "Gider"
+                              : "Tür seçin"}
                         </SelectValue>
                       </SelectTrigger>
                     </FormControl>
@@ -155,7 +181,13 @@ export function QuickEntryForm() {
                     />
                   </div>
                   <FormControl>
-                    <Input type="number" step="0.01" inputMode="decimal" placeholder="0.00" {...field} />
+                    <Input
+                      type="number"
+                      step="0.01"
+                      inputMode="decimal"
+                      placeholder="0.00"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -169,37 +201,35 @@ export function QuickEntryForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Kategori</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                <Select
+                  onValueChange={field.onChange}
+                  value={field.value}
+                  defaultValue={field.value}
+                >
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Kategori seçin">
-                        {{
-                          salary: "Maaş",
-                          investment: "Yatırım",
-                          other_income: "Diğer",
-                          food: "Gıda",
-                          transport: "Ulaşım",
-                          utilities: "Faturalar",
-                          entertainment: "Eğlence",
-                          other_expense: "Diğer"
-                        }[field.value] || "Kategori seçin"}
+                        {categoryLabels[field.value] || "Kategori seçin"}
                       </SelectValue>
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
                     {form.watch("type") === "income" ? (
                       <>
-                        <SelectItem value="salary">Maaş</SelectItem>
-                        <SelectItem value="investment">Yatırım</SelectItem>
-                        <SelectItem value="other_income">Diğer</SelectItem>
+                        <SelectItem value="maaş">Maaş</SelectItem>
+                        <SelectItem value="diğer_gelir">Diğer Gelir</SelectItem>
                       </>
                     ) : (
                       <>
-                        <SelectItem value="food">Gıda</SelectItem>
-                        <SelectItem value="transport">Ulaşım</SelectItem>
-                        <SelectItem value="utilities">Faturalar</SelectItem>
-                        <SelectItem value="entertainment">Eğlence</SelectItem>
-                        <SelectItem value="other_expense">Diğer</SelectItem>
+                        <SelectItem value="gıda">Gıda</SelectItem>
+                        <SelectItem value="market">Market</SelectItem>
+                        <SelectItem value="ulaşım">Ulaşım</SelectItem>
+                        <SelectItem value="faturalar">Faturalar</SelectItem>
+                        <SelectItem value="eğlence">Eğlence</SelectItem>
+                        <SelectItem value="yatırım">Yatırım</SelectItem>
+                        <SelectItem value="kredi">Kredi & Borç</SelectItem>
+                        <SelectItem value="kredi_kartı_ödemesi">Kredi Kartı Ödemesi</SelectItem>
+                        <SelectItem value="diğer_gider">Diğer Gider</SelectItem>
                       </>
                     )}
                   </SelectContent>
@@ -216,11 +246,17 @@ export function QuickEntryForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Ödeme Şekli</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Ödeme şekli seçin">
-                          {field.value === 'credit_card' ? 'Kredi Kartı' : 'Nakit / Banka Kartı'}
+                          {field.value === "credit_card"
+                            ? "Kredi Kartı"
+                            : "Nakit / Banka Kartı"}
                         </SelectValue>
                       </SelectTrigger>
                     </FormControl>
@@ -230,7 +266,8 @@ export function QuickEntryForm() {
                     </SelectContent>
                   </Select>
                   <FormDescription>
-                    Kredi kartı harcamaları "Toplam Gider" tutarına yansımaz, böylece kart ekstresini ödediğinizde duplikasyon oluşmaz.
+                    Kredi kartı harcamaları "Toplam Gider" tutarına yansımaz,
+                    böylece kart ekstresini ödediğinizde duplikasyon oluşmaz.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -274,7 +311,9 @@ export function QuickEntryForm() {
                   <Input
                     type="date"
                     className="w-auto min-w-[140px] h-10"
-                    value={field.value ? format(field.value, "yyyy-MM-dd") : ""}
+                    value={
+                      field.value ? format(field.value, "yyyy-MM-dd") : ""
+                    }
                     onChange={(e) => {
                       const d = new Date(e.target.value);
                       if (!isNaN(d.getTime())) field.onChange(d);
@@ -304,18 +343,10 @@ export function QuickEntryForm() {
             )}
           />
 
-          <Button type="submit" className="w-full">
-            Kaydet
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? "Kaydediliyor..." : "Kaydet"}
           </Button>
         </form>
-
-        {/* Toast Notification */}
-        {successMsg && (
-          <div className="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-xl shadow-xl flex items-center gap-2 animate-in slide-in-from-bottom-5 duration-300 z-50">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-            <span className="font-medium">İşlem başarıyla eklendi!</span>
-          </div>
-        )}
       </Form>
     </div>
   );

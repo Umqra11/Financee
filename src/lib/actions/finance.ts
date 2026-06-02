@@ -292,12 +292,13 @@ export async function getOrCreateGeneralBudget(params: {
 
   const budget = budgets?.[0];
 
-  // Aynı ayın toplam harcamalarını getir
+  // Aynı ayın toplam harcamalarını getir (kredi ve kredi kartı ödemeleri hariç)
   const { data: expenses, error: expenseError } = await supabase
     .from('transactions')
-    .select('amount')
+    .select('amount, categories!inner(name)')
     .eq('user_id', userData.user.id)
     .eq('type', 'expense')
+    .not('categories.name', 'in', '("kredi","kredi_kartı_ödemesi")')
     .gte('date', startStr)
     .lt('date', endStr);
 
@@ -416,7 +417,7 @@ export async function getTotalBalance() {
 
   const { data, error } = await supabase
     .from('transactions')
-    .select('amount, type, payment_method')
+    .select('amount, type, payment_method, categories(name)')
     .eq('user_id', userData.user.id);
 
   if (error) {

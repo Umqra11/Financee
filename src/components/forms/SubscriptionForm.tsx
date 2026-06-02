@@ -10,6 +10,7 @@ import { useState } from "react";
 
 import { cn } from "@/lib/utils";
 import { addSubscription } from "@/lib/actions/subscriptions";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -52,6 +53,16 @@ const formSchema = z.object({
   end_date: z.date().optional(),
 });
 
+const categoryLabels: Record<string, string> = {
+  eğlence: "Eğlence (Netflix, Spotify vb.)",
+  faturalar: "Faturalar (İnternet, Su vb.)",
+  gıda: "Gıda (Yemek kartı vb.)",
+  market: "Market (Getir, Yemeksepeti vb.)",
+  ulaşım: "Ulaşım (Akaryakıt, Toplu Taşıma)",
+  kredi: "Kredi & Borç",
+  diğer_gider: "Diğer Düzenli Gider",
+};
+
 export function SubscriptionForm() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -70,8 +81,9 @@ export function SubscriptionForm() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
-      setIsSubmitting(true);
       await addSubscription({
         name: values.name,
         amount: Number(values.amount),
@@ -83,10 +95,10 @@ export function SubscriptionForm() {
       });
       form.reset();
       router.refresh();
-      alert("Abonelik başarıyla eklendi.");
+      toast.success("Abonelik başarıyla kaydedildi.");
     } catch (error) {
       console.error(error);
-      alert("Hata oluştu.");
+      toast.error("Bir hata oluştu. Lütfen tekrar deneyiniz.");
     } finally {
       setIsSubmitting(false);
     }
@@ -134,22 +146,18 @@ export function SubscriptionForm() {
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Kategori seçin">
-                        {{
-                          entertainment: "Eğlence (Netflix, Spotify vb.)",
-                          utilities: "Faturalar (İnternet, Su vb.)",
-                          loan: "Kredi & Borç",
-                          rent: "Kira",
-                          other_expense: "Diğer Düzenli Gider"
-                        }[field.value] || "Kategori seçin"}
+                        {categoryLabels[field.value] || "Kategori seçin"}
                       </SelectValue>
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="entertainment">Eğlence</SelectItem>
-                    <SelectItem value="utilities">Faturalar</SelectItem>
-                    <SelectItem value="loan">Kredi & Borç</SelectItem>
-                    <SelectItem value="rent">Kira</SelectItem>
-                    <SelectItem value="other_expense">Diğer</SelectItem>
+                    <SelectItem value="eğlence">Eğlence</SelectItem>
+                    <SelectItem value="faturalar">Faturalar</SelectItem>
+                    <SelectItem value="gıda">Gıda</SelectItem>
+                    <SelectItem value="market">Market</SelectItem>
+                    <SelectItem value="ulaşım">Ulaşım</SelectItem>
+                    <SelectItem value="kredi">Kredi & Borç</SelectItem>
+                    <SelectItem value="diğer_gider">Diğer</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
