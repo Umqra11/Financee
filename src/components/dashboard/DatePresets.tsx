@@ -87,7 +87,7 @@ export function DatePresets({ basePath = "/" }: { basePath?: string }) {
     params.set("from", fromStr);
     params.set("to", toStr);
 
-    router.push(`${basePath}?${params.toString()}`);
+    router.replace(`${basePath}?${params.toString()}`, { scroll: false });
   };
 
   const presets = [

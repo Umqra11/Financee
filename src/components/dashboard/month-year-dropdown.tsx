@@ -18,15 +18,16 @@ const MONTHS = [
 
 const YEARS = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i);
 
-export function MonthYearDropdown({ className, basePath = "/" }: React.HTMLAttributes<HTMLDivElement> & { basePath?: string }) {
+export function MonthYearDropdown({ className, basePath = "/", initialMonth, initialYear }: React.HTMLAttributes<HTMLDivElement> & { basePath?: string; initialMonth?: number; initialYear?: number }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [month, setMonth] = React.useState<string>(new Date().getMonth().toString());
-  const [year, setYear] = React.useState<string>(new Date().getFullYear().toString());
+  const [month, setMonth] = React.useState<string>(initialMonth !== undefined ? initialMonth.toString() : new Date().getMonth().toString());
+  const [year, setYear] = React.useState<string>(initialYear !== undefined ? initialYear.toString() : new Date().getFullYear().toString());
 
-  // Initialize from searchParams if available
+  // Initialize from searchParams if available (only if initialMonth/initialYear not provided)
   React.useEffect(() => {
+    if (initialMonth !== undefined && initialYear !== undefined) return;
     const fromParam = searchParams.get("from");
     const toParam = searchParams.get("to");
     if (fromParam && toParam) {
@@ -47,7 +48,7 @@ export function MonthYearDropdown({ className, basePath = "/" }: React.HTMLAttri
         }
       }
     }
-  }, [searchParams]);
+  }, [searchParams, initialMonth, initialYear]);
 
   const handleUpdate = (newMonth: string, newYear: string) => {
     setMonth(newMonth);
@@ -66,7 +67,7 @@ export function MonthYearDropdown({ className, basePath = "/" }: React.HTMLAttri
     params.set("from", fromStr);
     params.set("to", toStr);
 
-    router.push(`${basePath}?${params.toString()}`);
+    router.replace(`${basePath}?${params.toString()}`, { scroll: false });
   };
 
   return (

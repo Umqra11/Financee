@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { TrendingDown, TrendingUp, Pencil, Check, X } from "lucide-react";
 import { upsertGeneralBudget } from "@/lib/actions/finance";
@@ -115,9 +116,12 @@ export function BudgetProgressBar({
                             <TrendingDown className="w-4 h-4" />
                         )}
                     </div>
-                    <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+                    <Link
+                        href={`/budget?month=${month}&year=${year}`}
+                        className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
+                    >
                         Aylık Bütçe
-                    </span>
+                    </Link>
                 </div>
 
                 {isEditing ? (

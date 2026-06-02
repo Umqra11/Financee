@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
-import { Home, Plus, List, Settings, Repeat } from "lucide-react";
+import { Home, Plus, List, Settings, Repeat, PiggyBank } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { OfflineSyncBanner } from "./OfflineSyncBanner";
 import ControlCenter from "./ControlCenter";
@@ -13,6 +13,7 @@ const navItems = [
   { name: "Ana Sayfa", href: "/", icon: Home },
   { name: "İşlemler", href: "/transactions", icon: List },
   { name: "Ekle", href: "/add", icon: Plus, featured: true },
+  { name: "Bütçe", href: "/budget", icon: PiggyBank },
   { name: "Düzenli Ödemeler", href: "/subscriptions", icon: Repeat },
   { name: "Ayarlar", href: "/settings", icon: Settings },
 ];
@@ -27,7 +28,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <OfflineSyncBanner />
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-64 border-r bg-card px-4 py-8">
-        <div className="mb-10 px-4 flex items-center justify-between">
+        <div className="mb-10 px-4 flex items-center gap-3">
+          {/* Uygulama Logosu */}
+          <svg viewBox="0 0 28 28" className="w-8 h-8 shrink-0">
+            <circle cx="14" cy="14" r="14" fill="#111827" />
+            <polygon points="14,6 6,21 22,21" fill="white" />
+          </svg>
           <h1
             className="text-2xl font-bold tracking-tight text-primary cursor-pointer select-none"
             onClick={() => setControlCenterOpen(true)}
