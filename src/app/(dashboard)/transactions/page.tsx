@@ -3,16 +3,20 @@ import React from "react";
 export const dynamic = "force-dynamic";
 
 import { TransactionList } from "@/components/transactions/TransactionList";
+import { syncSubscriptionsToTransactions } from "@/lib/actions/sync";
 import { Card, CardContent } from "@/components/ui/card";
 import { startOfMonth, endOfMonth, format } from "date-fns";
 import { MonthYearDropdown } from "@/components/dashboard/month-year-dropdown";
 import { DatePresets } from "@/components/dashboard/DatePresets";
 
-export default function TransactionsPage({
+export default async function TransactionsPage({
   searchParams,
 }: {
   searchParams: { from?: string; to?: string; month?: string; year?: string };
 }) {
+  // Zamanı gelmiş düzenli ödemeleri transactions tablosuna senkronize et
+  await syncSubscriptionsToTransactions();
+
   const now = new Date();
 
   // from/to varsa onları kullan, yoksa bu ayın başı ve sonunu kullan
