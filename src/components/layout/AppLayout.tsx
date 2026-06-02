@@ -8,6 +8,7 @@ import { Home, Plus, List, Settings, Repeat } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { OfflineSyncBanner } from "./OfflineSyncBanner";
 import ControlCenter from "./ControlCenter";
+import { PullToRefresh } from "./PullToRefresh";
 
 const navItems = [
   { name: "Ana Sayfa", href: "/", icon: Home },
@@ -104,7 +105,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </svg>
             <h1 className="text-xl font-bold text-primary">Financee</h1>
           </header>
-          {children}
+          <PullToRefresh>{children}</PullToRefresh>
         </div>
       </main>
 

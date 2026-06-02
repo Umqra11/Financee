@@ -60,6 +60,7 @@ const categoryLabels: Record<string, string> = {
   market: "Market (Getir, Yemeksepeti vb.)",
   ulaşım: "Ulaşım (Akaryakıt, Toplu Taşıma)",
   kredi: "Kredi & Borç",
+  yatırım: "Yatırım (Altın, Hisse vb.)",
   diğer_gider: "Diğer Düzenli Gider",
 };
 
@@ -157,6 +158,7 @@ export function SubscriptionForm() {
                     <SelectItem value="market">Market</SelectItem>
                     <SelectItem value="ulaşım">Ulaşım</SelectItem>
                     <SelectItem value="kredi">Kredi & Borç</SelectItem>
+                    <SelectItem value="yatırım">Yatırım</SelectItem>
                     <SelectItem value="diğer_gider">Diğer</SelectItem>
                   </SelectContent>
                 </Select>
