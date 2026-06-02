@@ -11,7 +11,7 @@ import { DatePresets } from "@/components/dashboard/DatePresets";
 import { ExpensePieChart } from "@/components/dashboard/ExpensePieChart";
 import { TrendLineChart } from "@/components/dashboard/TrendLineChart";
 import { ExportButton } from "@/components/subscriptions/ExportButton";
-import { subMonths } from "date-fns";
+import { subMonths, startOfMonth, format } from "date-fns";
 import { cn } from "@/lib/utils";
 
 export default async function Home(props: {
@@ -26,7 +26,7 @@ export default async function Home(props: {
   const strD = d < 10 ? `0${d}` : `${d}`;
   const todayStr = `${y}-${strM}-${strD}`;
 
-  const defaultFrom = todayStr;
+  const defaultFrom = format(startOfMonth(now), "yyyy-MM-dd");
   const defaultTo = todayStr;
 
   const fromParam = resolvedParams?.from || defaultFrom;
