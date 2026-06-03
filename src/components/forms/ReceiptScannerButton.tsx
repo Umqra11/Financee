@@ -83,6 +83,17 @@ export function ReceiptScannerButton({ onScanSuccess, compact }: ReceiptScannerP
       }
     } catch (error: any) {
       showToast("error", error.message || "Fiş okunurken bir hata oluştu.");
+
+      // Hata durumunda da logla
+      trackTokens({
+        model: "gemini-3.1-pro-preview",
+        endpoint: "/api/scan-receipt",
+        promptTokens: 0,
+        completionTokens: 0,
+        totalTokens: 0,
+        status: "error",
+        errorMessage: error.message || "Fiş okunurken hata oluştu.",
+      });
     } finally {
       setIsScanning(false);
       setIsMenuOpen(false);

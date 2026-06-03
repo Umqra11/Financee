@@ -39,7 +39,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
     clickTimerRef.current = setTimeout(() => {
       setClickCount(0);
-    }, 1500);
+    }, 3000);
   };
 
   React.useEffect(() => {
