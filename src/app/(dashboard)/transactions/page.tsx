@@ -11,11 +11,11 @@ import { DatePresets } from "@/components/dashboard/DatePresets";
 
 import { FilterMode } from "@/components/transactions/TransactionList";
 
-export default async function TransactionsPage({
-  searchParams,
-}: {
-  searchParams: { from?: string; to?: string; month?: string; year?: string; filter?: string };
+export default async function TransactionsPage(props: {
+  searchParams: Promise<{ from?: string; to?: string; month?: string; year?: string; filter?: string }>;
 }) {
+  const searchParams = await props.searchParams;
+
   // Zamanı gelmiş düzenli ödemeleri transactions tablosuna senkronize et
   await syncSubscriptionsToTransactions();
 

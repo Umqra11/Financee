@@ -97,9 +97,9 @@ export function BudgetProgressBar({
     return (
         <Link
             href={`/budget?month=${month}&year=${year}`}
-            className="block w-full"
+            className="block w-full transition-all hover:shadow-md hover:-translate-y-0.5 rounded-xl"
         >
-            <div className="w-full space-y-3 cursor-pointer">
+            <div className="w-full space-y-3 cursor-pointer p-4">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <div
