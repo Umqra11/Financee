@@ -22,13 +22,30 @@ const categoryLabels: Record<string, string> = {
   market: "Market",
 };
 
-export async function TransactionList({ from, to }: { from?: string; to?: string } = {}) {
+export type FilterMode = "all" | "income" | "budget_expenses";
+
+export async function TransactionList({
+  from,
+  to,
+  filterMode = "all",
+}: { from?: string; to?: string; filterMode?: FilterMode } = {}) {
   let transactions: any[] = [];
   try {
     transactions = await getTransactions({ from, to });
   } catch (error) {
-    // User might not be logged in or error occurred
     console.error(error);
+  }
+
+  // Filtreleme
+  if (filterMode === "income") {
+    transactions = transactions.filter((tx: any) => tx.type === "income");
+  } else if (filterMode === "budget_expenses") {
+    transactions = transactions.filter((tx: any) => {
+      if (tx.type !== "expense") return false;
+      const catName = tx.categories?.name || "";
+      if (catName === "kredi" || catName === "kredi_kartı_ödemesi" || catName === "yatırım") return false;
+      return true;
+    });
   }
 
   return (

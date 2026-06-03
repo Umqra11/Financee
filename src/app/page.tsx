@@ -188,7 +188,7 @@ export default async function Home(props: {
             </p>
           </CardContent>
         </Card>
-        <Link href={`/transactions?from=${fromParam}&to=${toParam}`} className="transition-all hover:shadow-md hover:-translate-y-0.5 rounded-xl">
+        <Link href={`/transactions?from=${fromParam}&to=${toParam}&filter=income`} className="transition-all hover:shadow-md hover:-translate-y-0.5 rounded-xl">
           <Card className="cursor-pointer">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <CardTitle className="text-sm font-medium">Toplam Gelir</CardTitle>
@@ -199,7 +199,7 @@ export default async function Home(props: {
             </CardContent>
           </Card>
         </Link>
-        <Link href={`/transactions?from=${fromParam}&to=${toParam}`} className="transition-all hover:shadow-md hover:-translate-y-0.5 rounded-xl">
+        <Link href={`/transactions?from=${fromParam}&to=${toParam}&filter=budget_expenses`} className="transition-all hover:shadow-md hover:-translate-y-0.5 rounded-xl">
           <Card className="cursor-pointer">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <CardTitle className="text-sm font-medium">Toplam Gider (Nakit)</CardTitle>

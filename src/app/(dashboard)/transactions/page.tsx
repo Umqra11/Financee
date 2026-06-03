@@ -9,10 +9,12 @@ import { startOfMonth, endOfMonth, format } from "date-fns";
 import { MonthYearDropdown } from "@/components/dashboard/month-year-dropdown";
 import { DatePresets } from "@/components/dashboard/DatePresets";
 
+import { FilterMode } from "@/components/transactions/TransactionList";
+
 export default async function TransactionsPage({
   searchParams,
 }: {
-  searchParams: { from?: string; to?: string; month?: string; year?: string };
+  searchParams: { from?: string; to?: string; month?: string; year?: string; filter?: string };
 }) {
   // Zamanı gelmiş düzenli ödemeleri transactions tablosuna senkronize et
   await syncSubscriptionsToTransactions();
@@ -54,7 +56,7 @@ export default async function TransactionsPage({
 
       <Card>
         <CardContent className="pt-6">
-          <TransactionList from={fromParam} to={toParam} />
+          <TransactionList from={fromParam} to={toParam} filterMode={(searchParams?.filter as FilterMode) || "all"} />
         </CardContent>
       </Card>
     </div>
