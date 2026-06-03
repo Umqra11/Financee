@@ -11,6 +11,7 @@ import { TrendLineChart } from "@/components/dashboard/TrendLineChart";
 import { BudgetProgressBar } from "@/components/dashboard/BudgetProgressBar";
 import { AiChatPanel } from "@/components/dashboard/AiChatPanel";
 import { ExportButton } from "@/components/subscriptions/ExportButton";
+import Link from "next/link";
 import { startOfMonth, format } from "date-fns";
 
 export default async function Home(props: {
@@ -23,7 +24,7 @@ export default async function Home(props: {
   const strM = m < 10 ? `0${m}` : `${m}`;
   const todayStr = `${y}-${strM}-${String(now.getDate()).padStart(2, '0')}`;
 
-  const defaultFrom = format(startOfMonth(now), "yyyy-MM-dd");
+  const defaultFrom = todayStr;
   const defaultTo = todayStr;
 
   const fromParam = resolvedParams?.from || defaultFrom;
@@ -187,24 +188,28 @@ export default async function Home(props: {
             </p>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">Toplam Gelir</CardTitle>
-            <ArrowUpCircle className="w-4 h-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">+{formatCurrency(totalIncome)}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">Toplam Gider (Nakit)</CardTitle>
-            <ArrowDownCircle className="w-4 h-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">-{formatCurrency(totalExpense)}</div>
-          </CardContent>
-        </Card>
+        <Link href={`/transactions?from=${fromParam}&to=${toParam}`} className="transition-all hover:shadow-md hover:-translate-y-0.5 rounded-xl">
+          <Card className="cursor-pointer">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium">Toplam Gelir</CardTitle>
+              <ArrowUpCircle className="w-4 h-4 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">+{formatCurrency(totalIncome)}</div>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href={`/transactions?from=${fromParam}&to=${toParam}`} className="transition-all hover:shadow-md hover:-translate-y-0.5 rounded-xl">
+          <Card className="cursor-pointer">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium">Toplam Gider (Nakit)</CardTitle>
+              <ArrowDownCircle className="w-4 h-4 text-red-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">-{formatCurrency(totalExpense)}</div>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       <div className="grid gap-6 grid-cols-1">
