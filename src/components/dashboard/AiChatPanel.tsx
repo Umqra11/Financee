@@ -11,6 +11,7 @@ import {
     ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { trackTokens } from "@/lib/token-counter";
 
 interface ChatMessage {
     role: "user" | "assistant";
@@ -96,6 +97,18 @@ export function AiChatPanel() {
                 ...prev,
                 { role: "assistant", content: data.message },
             ]);
+
+            // Token sayacına kaydet
+            if (data._usage) {
+                trackTokens({
+                    model: "deepseek-v4-flash",
+                    endpoint: "/api/ai-chat",
+                    promptTokens: data._usage.promptTokens,
+                    completionTokens: data._usage.completionTokens,
+                    totalTokens: data._usage.totalTokens,
+                    status: "success",
+                });
+            }
         } catch (error: any) {
             setMessages((prev) => [
                 ...prev,

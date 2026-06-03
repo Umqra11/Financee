@@ -3,6 +3,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import { Camera, Loader2, Image, ClipboardPaste, ChevronDown } from "lucide-react";
 import { parseReceipt } from "@/lib/actions/ai";
+import { trackTokens } from "@/lib/token-counter";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -54,6 +55,18 @@ export function ReceiptScannerButton({ onScanSuccess, compact }: ReceiptScannerP
       const result = await parseReceipt(base64Data, mimeType);
       if (result.success && result.data) {
         showToast("success", "Fiş başarıyla okundu!");
+
+        // Token sayacına kaydet
+        if (result._usage) {
+          trackTokens({
+            model: "gemini-3.1-pro-preview",
+            endpoint: "/api/scan-receipt",
+            promptTokens: result._usage.promptTokens,
+            completionTokens: result._usage.completionTokens,
+            totalTokens: result._usage.totalTokens,
+            status: "success",
+          });
+        }
 
         let parsedDate = new Date();
         if (result.data.date) {
@@ -323,10 +336,10 @@ export function ReceiptScannerButton({ onScanSuccess, compact }: ReceiptScannerP
       {toastMessage && (
         <div
           className={`fixed bottom-4 left-1/2 -translate-x-1/2 px-6 py-3 rounded-xl shadow-xl flex items-center gap-2 animate-in slide-in-from-bottom-5 duration-300 z-[60] ${toastMessage.type === "success"
-              ? "bg-green-500 text-white"
-              : toastMessage.type === "error"
-                ? "bg-red-500 text-white"
-                : "bg-blue-500 text-white"
+            ? "bg-green-500 text-white"
+            : toastMessage.type === "error"
+              ? "bg-red-500 text-white"
+              : "bg-blue-500 text-white"
             }`}
         >
           {toastMessage.type === "loading" && <Loader2 className="w-5 h-5 animate-spin" />}
