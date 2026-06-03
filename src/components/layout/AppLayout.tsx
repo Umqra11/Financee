@@ -22,6 +22,31 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [controlCenterOpen, setControlCenterOpen] = React.useState(false);
+  const [clickCount, setClickCount] = React.useState(0);
+  const clickTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleTitleClick = () => {
+    const newCount = clickCount + 1;
+    setClickCount(newCount);
+
+    if (clickTimerRef.current) clearTimeout(clickTimerRef.current);
+
+    if (newCount >= 5) {
+      setClickCount(0);
+      setControlCenterOpen(true);
+      return;
+    }
+
+    clickTimerRef.current = setTimeout(() => {
+      setClickCount(0);
+    }, 1500);
+  };
+
+  React.useEffect(() => {
+    return () => {
+      if (clickTimerRef.current) clearTimeout(clickTimerRef.current);
+    };
+  }, []);
 
   return (
     <div className="flex h-screen bg-background">
@@ -36,8 +61,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </svg>
           <h1
             className="text-2xl font-bold tracking-tight text-primary cursor-pointer select-none"
-            onClick={() => setControlCenterOpen(true)}
-            title="Kontrol Merkezi"
+            onClick={handleTitleClick}
+            title="Kontrol Merkezi (5 kez tıklayın)"
           >
             Financee
           </h1>
@@ -103,7 +128,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <circle cx="14" cy="14" r="14" fill="#111827" />
               <polygon points="14,6 6,21 22,21" fill="white" />
             </svg>
-            <h1 className="text-xl font-bold text-primary">Financee</h1>
+            <h1
+              className="text-xl font-bold text-primary cursor-pointer select-none"
+              onClick={handleTitleClick}
+            >
+              Financee
+            </h1>
           </header>
           <PullToRefresh>{children}</PullToRefresh>
         </div>
