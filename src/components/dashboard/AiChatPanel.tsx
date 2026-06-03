@@ -112,7 +112,7 @@ export function AiChatPanel() {
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === "Enter" && !e.shiftKey) {
+        if ((e.key === "Enter" || e.keyCode === 13) && !e.shiftKey) {
             e.preventDefault();
             handleSend();
         }
@@ -148,7 +148,7 @@ export function AiChatPanel() {
                     />
 
                     {/* Panel — mobilde tam ekran, desktop'ta sabit boyut */}
-                    <div className="relative w-full h-dvh md:h-[600px] md:max-h-[85vh] md:max-w-md md:rounded-2xl bg-white dark:bg-zinc-900 md:shadow-2xl border-0 md:border border-zinc-200 dark:border-zinc-800 flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+                    <div className="relative w-full h-full md:h-[600px] md:max-h-[85vh] md:max-w-md md:rounded-2xl bg-white dark:bg-zinc-900 md:shadow-2xl border-0 md:border border-zinc-200 dark:border-zinc-800 flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
                         {/* Header */}
                         <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100 dark:border-zinc-800 bg-gradient-to-r from-violet-50 to-indigo-50 dark:from-violet-950/30 dark:to-indigo-950/30 shrink-0">
                             <div className="flex items-center gap-3">
@@ -258,6 +258,7 @@ export function AiChatPanel() {
                                     autoComplete="off"
                                     autoCorrect="off"
                                     spellCheck={false}
+                                    enterKeyHint="send"
                                     className="flex-1 bg-transparent border-none outline-none text-sm py-2 text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 text-base md:text-sm"
                                 />
                                 <button
