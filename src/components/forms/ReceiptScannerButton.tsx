@@ -56,17 +56,15 @@ export function ReceiptScannerButton({ onScanSuccess, compact }: ReceiptScannerP
       if (result.success && result.data) {
         showToast("success", "Fiş başarıyla okundu!");
 
-        // Token sayacına kaydet
-        if (result._usage) {
-          trackTokens({
-            model: "gemini-3.1-pro-preview",
-            endpoint: "/api/scan-receipt",
-            promptTokens: result._usage.promptTokens,
-            completionTokens: result._usage.completionTokens,
-            totalTokens: result._usage.totalTokens,
-            status: "success",
-          });
-        }
+        // Token sayacına kaydet (usage olmasa da isteği logla)
+        trackTokens({
+          model: "gemini-3.1-pro-preview",
+          endpoint: "/api/scan-receipt",
+          promptTokens: result._usage?.promptTokens ?? 0,
+          completionTokens: result._usage?.completionTokens ?? 0,
+          totalTokens: result._usage?.totalTokens ?? 0,
+          status: "success",
+        });
 
         let parsedDate = new Date();
         if (result.data.date) {
