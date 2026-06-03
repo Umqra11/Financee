@@ -44,16 +44,28 @@ async function getFinancialContext(userId: string) {
 
     transactions?.forEach((tx) => {
         const amount = Number(tx.amount);
+        const rawCat =
+            tx.categories && !Array.isArray(tx.categories)
+                ? tx.categories.name
+                : "Kategorisiz";
+
         if (tx.type === "income") {
             totalIncome += amount;
         } else {
-            totalExpense += amount;
-            const catName =
-                tx.categories && !Array.isArray(tx.categories)
-                    ? tx.categories.name
-                    : "Kategorisiz";
-            categoryExpenses[catName] =
-                (categoryExpenses[catName] || 0) + amount;
+            // Kredi kartı işlemlerini ve kredi/borç kategorilerini bütçe hesaplamasına dahil etme
+            const isCreditCard = tx.payment_method === "credit_card";
+            const isExcludedCategory =
+                rawCat === "kredi" || rawCat === "kredi_kartı_ödemesi";
+
+            if (!isCreditCard && !isExcludedCategory) {
+                totalExpense += amount;
+            }
+
+            // Kategori harcamalarına kredi/borç kategorilerini ekleme
+            if (!isExcludedCategory) {
+                categoryExpenses[rawCat] =
+                    (categoryExpenses[rawCat] || 0) + amount;
+            }
         }
     });
 
@@ -174,7 +186,7 @@ Kurallar:
 2. Sorulan soruya spesifik, kısa ve öz cevap ver. Gereksiz uzun açıklamalardan kaçın.
 3. Tasarruf önerilerini somut rakamlarla destekle.
 4. Eğer kullanıcının bütçesi aşılmışsa uyar, iyiyse tebrik et.
-5. Kredi kartı ödemeleri ve kredi/borç ödemeleri aylık tüketim bütçesine dahil DEĞİLDİR. Bunu bil.`;
+5. Kredi kartı ödemeleri ve kredi/borç ödemeleri aylık tüketim bütçesine dahil DEĞİLDİR. Yukarıdaki "aylık gider" ve "kategori harcamaları" rakamlarından bu kalemler zaten çıkarılmıştır - ek bir filtreleme yapma.`;
 
         const completion = await openai.chat.completions.create({
             model: "deepseek-v4-flash",
