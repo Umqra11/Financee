@@ -63,6 +63,7 @@ const categoryLabels: Record<string, string> = {
   yatırım: "Yatırım",
   kredi_kartı_ödemesi: "Kredi Kartı Ödemesi",
   market: "Market",
+  sağlık: "Sağlık",
 };
 
 export function QuickEntryForm() {
@@ -229,6 +230,7 @@ export function QuickEntryForm() {
                         <SelectItem value="yatırım">Yatırım</SelectItem>
                         <SelectItem value="kredi">Kredi & Borç</SelectItem>
                         <SelectItem value="kredi_kartı_ödemesi">Kredi Kartı Ödemesi</SelectItem>
+                        <SelectItem value="sağlık">Sağlık</SelectItem>
                         <SelectItem value="diğer_gider">Diğer Gider</SelectItem>
                       </>
                     )}
