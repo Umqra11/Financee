@@ -61,7 +61,7 @@ export default async function BudgetPage(props: {
     const budgetExpenses = allTransactions.filter((tx: any) => {
         if (tx.type !== "expense") return false;
         const catName = tx.categories?.name || "";
-        if (catName === "kredi" || catName === "kredi_kartı_ödemesi" || catName === "yatırım") return false;
+        if (catName === "kredi" || catName === "kredi_kartı_ödemesi" || catName === "yatırım" || catName === "sağlık") return false;
         return true;
     });
 

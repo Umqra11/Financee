@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useMemo } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { TrendingDown, TrendingUp, Pencil, Check, X } from "lucide-react";
+import { TrendingDown, TrendingUp, Pencil, Check, X, Clock } from "lucide-react";
 import { upsertGeneralBudget } from "@/lib/actions/finance";
 import { toast } from "sonner";
 
@@ -38,6 +38,22 @@ export function BudgetProgressBar({
 
     const clampPercentage = Math.min(Math.max(percentage, 0), 100);
     const displayPercentage = Math.round(percentage);
+
+    // Ay sonuna kaç gün kaldığını hesapla
+    const daysRemaining = useMemo(() => {
+        const now = new Date();
+        // Ayın son gününü bul (JavaScript'te day=0 bir önceki ayın son günüdür)
+        const lastDayOfMonth = new Date(year, month, 0).getDate();
+        const today = now.getDate();
+        const remaining = lastDayOfMonth - today;
+        // Eğer farklı bir ay/yıl gösteriliyorsa (geçmiş ay), 0 döndür
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth() + 1;
+        if (year !== currentYear || month !== currentMonth) {
+            return 0;
+        }
+        return Math.max(remaining, 0);
+    }, [month, year]);
 
     const barColor = !hasBudget
         ? "bg-zinc-200 dark:bg-zinc-700"
@@ -237,6 +253,16 @@ export function BudgetProgressBar({
                         </>
                     )}
                 </div>
+
+                {/* Ay bitimine kalan gün */}
+                {daysRemaining > 0 && (
+                    <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground pt-1 border-t border-zinc-100 dark:border-zinc-800">
+                        <Clock className="w-3 h-3" />
+                        <span>
+                            Ay bitimine <span className="font-semibold text-zinc-700 dark:text-zinc-300">{daysRemaining}</span> gün kaldı
+                        </span>
+                    </div>
+                )}
             </div>
         </Link>
     );

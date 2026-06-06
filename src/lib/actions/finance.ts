@@ -298,7 +298,7 @@ export async function getOrCreateGeneralBudget(params: {
     .select('amount, categories!inner(name)')
     .eq('user_id', userData.user.id)
     .eq('type', 'expense')
-    .not('categories.name', 'in', '("kredi","kredi_kartı_ödemesi","yatırım")')
+    .not('categories.name', 'in', '("kredi","kredi_kartı_ödemesi","yatırım","sağlık")')
     .gte('date', startStr)
     .lt('date', endStr);
 

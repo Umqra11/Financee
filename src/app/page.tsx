@@ -68,6 +68,7 @@ export default async function Home(props: {
       yatırım: "Yatırım",
       kredi_kartı_ödemesi: "Kredi Kartı Ödemesi",
       market: "Market",
+      sağlık: "Sağlık",
     };
 
     const categoryMap = new Map<string, { name: string; value: number }>();
@@ -82,7 +83,7 @@ export default async function Home(props: {
         }
 
         const rawCat = tx.categories?.name || 'Kategorisiz';
-        if (rawCat === 'kredi' || rawCat === 'kredi_kartı_ödemesi') return;
+        if (rawCat === 'kredi' || rawCat === 'kredi_kartı_ödemesi' || rawCat === 'sağlık') return;
 
         const categoryName = categoryLabels[rawCat] || rawCat;
 
