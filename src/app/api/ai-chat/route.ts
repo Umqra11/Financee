@@ -55,7 +55,7 @@ async function getFinancialContext(userId: string) {
             // Kredi kartı işlemlerini ve kredi/borç kategorilerini bütçe hesaplamasına dahil etme
             const isCreditCard = tx.payment_method === "credit_card";
             const isExcludedCategory =
-                rawCat === "kredi" || rawCat === "kredi_kartı_ödemesi";
+                rawCat === "kredi" || rawCat === "kredi_kartı_ödemesi" || rawCat === "sağlık";
 
             if (!isCreditCard && !isExcludedCategory) {
                 totalExpense += amount;
@@ -101,6 +101,11 @@ async function getFinancialContext(userId: string) {
         return sum + amt;
     }, 0);
 
+    // Ay bitimine kalan gün
+    const lastDayOfMonth = new Date(y, m, 0).getDate();
+    const today = now.getDate();
+    const daysRemaining = Math.max(lastDayOfMonth - today, 0);
+
     // Finansal özet
     const context = {
         dönem: `${m}/${y}`,
@@ -112,6 +117,7 @@ async function getFinancialContext(userId: string) {
             budgetAmount > 0
                 ? Math.round((totalExpense / budgetAmount) * 100)
                 : 0,
+        ay_bitimine_kalan_gün: daysRemaining,
         aktif_abonelikler: subs.map(
             (s) =>
                 `${s.name}: ${s.amount} ₺/${s.frequency === "monthly" ? "ay" : s.frequency === "yearly" ? "yıl" : "hafta"}${s.next_billing_date ? ` (sonraki: ${s.next_billing_date.split("T")[0]})` : ""}`
@@ -180,13 +186,15 @@ Kullanıcının GÜNCEL finansal durumu:
 - Bütçe kullanımı: %${financialContext.bütçe_kullanım_yüzdesi}
 - Aktif abonelikler: ${financialContext.aktif_abonelikler.length > 0 ? financialContext.aktif_abonelikler.join(", ") : "Yok"}
 - Aylık abonelik maliyeti: ${financialContext.aylık_toplam_abonelik_maliyeti} ₺
+- Ay bitimine kalan gün: ${financialContext.ay_bitimine_kalan_gün} gün
 
 Kurallar:
 1. Her zaman kullanıcının GERÇEK verilerine dayanarak cevap ver. Rakamları ve kategorileri kullan.
 2. Sorulan soruya spesifik, kısa ve öz cevap ver. Gereksiz uzun açıklamalardan kaçın.
 3. Tasarruf önerilerini somut rakamlarla destekle.
 4. Eğer kullanıcının bütçesi aşılmışsa uyar, iyiyse tebrik et.
-5. Kredi kartı ödemeleri ve kredi/borç ödemeleri aylık tüketim bütçesine dahil DEĞİLDİR. Yukarıdaki "aylık gider" ve "kategori harcamaları" rakamlarından bu kalemler zaten çıkarılmıştır - ek bir filtreleme yapma.`;
+5. Kredi kartı ödemeleri, kredi/borç ödemeleri ve sağlık harcamaları aylık tüketim bütçesine dahil DEĞİLDİR. Yukarıdaki "aylık gider" ve "kategori harcamaları" rakamlarından bu kalemler zaten çıkarılmıştır - ek bir filtreleme yapma.
+6. Ay bitimine kalan gün sayısını dikkate al! Ayın sonuna yaklaşıldığında (5 gün veya daha az kaldıysa) kullanıcıya hatırlat. Bütçe durumuna göre kalan günler için günlük harcama limiti öner. Örneğin: "Ayın bitmesine 5 gün kaldı. Bütçende 1000 ₺ kaldıysa, günde yaklaşık 200 ₺ harcayabilirsin." şeklinde somut tavsiyeler ver.`;
 
         const completion = await openai.chat.completions.create({
             model: "deepseek-v4-flash",
