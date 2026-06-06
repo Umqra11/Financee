@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 import { CalendarIcon, Edit2, X } from "lucide-react";
 
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { editTransaction } from "@/lib/actions/finance";
 import { toast } from "sonner";
@@ -82,6 +83,7 @@ export function EditTransactionModal({
   transaction: EditTransactionType;
   onEditSuccess?: () => void;
 }) {
+  const router = useRouter();
   const [open, setOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
@@ -130,6 +132,7 @@ export function EditTransactionModal({
         payment_method: values.payment_method,
       });
       setOpen(false);
+      router.refresh();
       if (onEditSuccess) onEditSuccess();
       toast.success("Başarıyla güncellendi.");
     } catch (error) {

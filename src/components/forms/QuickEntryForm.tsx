@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 
+import { useRouter } from "next/navigation";
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { addTransaction } from "@/lib/actions/finance";
@@ -67,6 +68,7 @@ const categoryLabels: Record<string, string> = {
 };
 
 export function QuickEntryForm() {
+  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -114,6 +116,7 @@ export function QuickEntryForm() {
         date: new Date(),
         payment_method: "cash",
       });
+      router.refresh();
       toast.success("Başarıyla kaydedildi.");
     } catch (error) {
       console.error(error);
